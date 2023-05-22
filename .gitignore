@@ -6,6 +6,7 @@ __pycache__/
 bin/
 bin-int/
 bin-obj/
+!vendor/bin/
 
 # Visual Studio
 **.sln
