@@ -19,6 +19,7 @@ workspace "CamClient"
 	}
 
 	group "Dependencies"
+		include "CamClient/vendor/opencv"
 	group ""
 
 	include "CamClient"

@@ -1,8 +1,12 @@
 #include <iostream>
 
+#include "Camera.h"
+
 int main(int argc, char *argv[])
 {
-	std::cout << "Hello from CamClient" << std::endl;
+	Camera c(true);
+	c.Stream();
+
 	return 0;
 }
 
