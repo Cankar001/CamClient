@@ -1,0 +1,17 @@
+lfs/
+hooks/
+__pycache__/
+.vs/
+
+bin/
+bin-int/
+bin-obj/
+
+# Visual Studio
+**.sln
+**.vcxproj
+**.vcxproj.filters
+**.vcxproj.user
+**.csproj
+**.csproj.user
+
