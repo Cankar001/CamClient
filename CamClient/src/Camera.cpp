@@ -2,6 +2,8 @@
 
 #include <thread>
 
+#define MAX_RETRIES 5
+
 Camera::Camera(bool flip, uint32 width, uint32 height)
 	: m_Flip(flip), m_Width(width), m_Height(height)
 {
@@ -118,12 +120,20 @@ void Camera::StreamImage()
 {
 	bool running = true;
 	cv::Mat frame;
+	uint32 failed_retries = 0;
 
 	while (running)
 	{
 		bool success = m_CameraStream.read(frame);
 		if (!success)
 		{
+			++failed_retries;
+			if (failed_retries >= MAX_RETRIES)
+			{
+				Release();
+				break;
+			}
+
 			continue;
 		}
 
