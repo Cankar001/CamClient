@@ -8,9 +8,10 @@ int main(int argc, char *argv[])
 	c.Stream();
 
 	// Pseudo loop to keep the program running until user decides to shutdown
-	while (c.IsStreaming())
-	{
-	}
+//	while (c.IsStreaming())
+//	{
+//	}
+	c.Show();
 
 	c.ReleaseStream();
 

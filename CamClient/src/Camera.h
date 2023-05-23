@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Core.h"
+#include "Core/ThreadSafeQueue.h"
 
 #include <opencv2/opencv.hpp>
 #include <thread>
@@ -44,5 +45,6 @@ private:
 	float m_RadiusX = 0, m_RadiusY = 0;
 	float m_Scale = 1;
 
+	ThreadSafeQueue<cv::Mat> m_StreamQueue;
 };
 

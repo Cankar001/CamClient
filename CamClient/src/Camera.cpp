@@ -23,7 +23,7 @@ Camera::~Camera()
 
 void Camera::Release()
 {
-	m_CameraIsStreaming = false;
+	m_CameraIsStreaming = false; 
 	m_CameraStream.release();
 	cv::destroyAllWindows();
 }
@@ -46,7 +46,26 @@ void Camera::Show()
 {
 	while (true)
 	{
+		cv::Mat frame = m_StreamQueue.Dequeue();
+		cv::namedWindow("Frame", cv::WND_PROP_FULLSCREEN);
+		cv::setWindowProperty("Frame", cv::WND_PROP_FULLSCREEN, cv::WND_PROP_FULLSCREEN);
+		cv::imshow("Frame", frame);
+		//cv::setMouseCallback("Frame", );
 
+		char key = cv::waitKey(1);
+		if (key == 'q')
+		{
+			Release();
+			break;
+		}
+		else if (key == 'z')
+		{
+			ZoomIn();
+		}
+		else if (key == 'x')
+		{
+			ZoomOut();
+		}
 	}
 }
 
@@ -128,11 +147,10 @@ void Camera::ZoomOut()
 
 void Camera::StreamImage()
 {
-	bool running = true;
 	cv::Mat frame;
 	uint32 failed_retries = 0;
 
-	while (running)
+	while (m_CameraIsStreaming)
 	{
 		bool success = m_CameraStream.read(frame);
 		if (!success)
@@ -163,24 +181,26 @@ void Camera::StreamImage()
 				frame = Zoom(frame, {0.0f, 0.0f});
 		}
 
-		cv::namedWindow("Frame", cv::WND_PROP_FULLSCREEN);
-		cv::setWindowProperty("Frame", cv::WND_PROP_FULLSCREEN, cv::WND_PROP_FULLSCREEN);
-		cv::imshow("Frame", frame);
-		//cv::setMouseCallback("Frame", );
+		m_StreamQueue.Enqueue(frame);
 
-		char key = cv::waitKey(1);
-		if (key == 'q')
-		{
-			Release();
-			break;
-		}
-		else if (key == 'z')
-		{
-			ZoomIn();
-		}
-		else if (key == 'x')
-		{
-			ZoomOut();
-		}
+	//	cv::namedWindow("Frame", cv::WND_PROP_FULLSCREEN);
+	//	cv::setWindowProperty("Frame", cv::WND_PROP_FULLSCREEN, cv::WND_PROP_FULLSCREEN);
+	//	cv::imshow("Frame", frame);
+	//	//cv::setMouseCallback("Frame", );
+	//
+	//	char key = cv::waitKey(1);
+	//	if (key == 'q')
+	//	{
+	//		Release();
+	//		break;
+	//	}
+	//	else if (key == 'z')
+	//	{
+	//		ZoomIn();
+	//	}
+	//	else if (key == 'x')
+	//	{
+	//		ZoomOut();
+	//	}
 	}
 }
