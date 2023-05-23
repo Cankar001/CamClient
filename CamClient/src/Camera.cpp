@@ -1,6 +1,6 @@
 #include "Camera.h"
 
-#include <thread>
+#include <exception>
 
 #define MAX_RETRIES 5
 
@@ -13,6 +13,7 @@ Camera::Camera(bool flip, uint32 width, uint32 height)
 
 	m_CameraStream.set(cv::CAP_PROP_FRAME_WIDTH, (double)m_Width);
 	m_CameraStream.set(cv::CAP_PROP_FRAME_HEIGHT, (double)m_Height);
+	std::this_thread::sleep_for(std::chrono::seconds(2));
 }
 
 Camera::~Camera()
@@ -22,14 +23,23 @@ Camera::~Camera()
 
 void Camera::Release()
 {
+	m_CameraIsStreaming = false;
 	m_CameraStream.release();
 	cv::destroyAllWindows();
 }
 
+void Camera::ReleaseStream()
+{
+	m_CameraStreamThread.join();
+}
+
 void Camera::Stream()
 {
-	//std::thread t(StreamImage);
-	StreamImage();
+	if (m_CameraIsStreaming)
+		return;
+
+	m_CameraStreamThread = std::thread(&Camera::StreamImage, std::ref(*this));
+	m_CameraIsStreaming = true;
 }
 
 void Camera::Show()
@@ -162,7 +172,6 @@ void Camera::StreamImage()
 		if (key == 'q')
 		{
 			Release();
-			cv::destroyAllWindows();
 			break;
 		}
 		else if (key == 'z')

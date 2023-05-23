@@ -23,4 +23,5 @@ workspace "CamClient"
 	group ""
 
 	include "CamClient"
+	include "UpdateClient"
 
