@@ -26,11 +26,34 @@ struct ClientConfig
 
 enum class ClientStatusCode
 {
+	/// <summary>
+	/// This is the idle state, where the client just listens for updates, which may be sent by the update server
+	/// </summary>
 	NONE = 0,
+
+	/// <summary>
+	/// The client received a different server version and therefore needs a local update
+	/// </summary>
 	NEEDS_UPDATE,
+
+	/// <summary>
+	/// The client received the same version from the server and will start the CamClient.
+	/// </summary>
 	UP_TO_DATE,
+	
+	/// <summary>
+	/// The CRC did not match.
+	/// </summary>
 	BAD_CRC,
+	
+	/// <summary>
+	/// The signature is missing or not generated.
+	/// </summary>
 	BAD_SIG,
+	
+	/// <summary>
+	/// An error occurred, when writing the update to disk.
+	/// </summary>
 	BAD_WRITE
 };
 
@@ -61,6 +84,7 @@ private:
 	ClientConfig m_Config;
 	Core::Socket *m_Socket = nullptr;
 	Core::FileSystem *m_FileSystem = nullptr;
+	Core::Crypto *m_Crypto = nullptr;
 	Core::addr_t m_Host;
 
 	Core::Buffer m_UpdateData;

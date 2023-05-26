@@ -24,9 +24,6 @@ int main(int argc, char *argv[])
 	config.Port = 44200;
 	Client c(config);
 
-	// First ask the server, if update is avaiable
-	c.RequestServerVersion();
-
 	// Then run the client
 	c.Run();
 

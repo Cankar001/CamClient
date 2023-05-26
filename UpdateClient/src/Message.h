@@ -58,6 +58,12 @@ struct ClientUpdatePieceMessage
 	uint32 PiecePos;
 };
 
+struct ServerVersionInfoMessage
+{
+	header_t Header;
+	uint32 Version;
+};
+
 struct ServerUpdateBeginMessage
 {
 	header_t Header;

@@ -64,6 +64,7 @@ Client::Client(const ClientConfig &config)
 {
 	m_Socket = Core::Socket::Create();
 	m_FileSystem = Core::FileSystem::Create();
+	m_Crypto = Core::Crypto::Create();
 
 	if (!m_Socket->Open())
 	{
@@ -81,6 +82,9 @@ Client::Client(const ClientConfig &config)
 
 Client::~Client()
 {
+	delete m_Crypto;
+	m_Crypto = nullptr;
+
 	delete m_FileSystem;
 	m_FileSystem = nullptr;
 
@@ -102,7 +106,7 @@ void Client::RequestServerVersion()
 	m_LocalVersion = local_version;
 
 	// Then request the latest client version from the server
-	ClientWantsVersionMessage message;
+	ClientWantsVersionMessage message = {};
 	message.LocalVersion = local_version;
 	message.ClientVersion = 0;
 	message.Header.Type = MessageType::CLIENT_REQUEST_VERSION;
@@ -113,8 +117,18 @@ void Client::RequestServerVersion()
 
 void Client::Run()
 {
+	// When running for the first time, request the server version
+	RequestServerVersion();
+
 	for (;;)
 	{
+		if (m_Status.Code == ClientStatusCode::UP_TO_DATE)
+		{
+			// TODO: start CamClient application
+
+			m_Status.Code = ClientStatusCode::NONE;
+		}
+
 		MessageLoop();
 	}
 }
@@ -129,7 +143,7 @@ void Client::MessageLoop()
 		int32 len = m_Socket->Recv(BUF, sizeof(BUF), &addr);
 		if (len < 0)
 		{
-			break;
+			return;
 		}
 
 		// ignore all messages from unknown senders
@@ -146,17 +160,17 @@ void Client::MessageLoop()
 		header_t *header = (header_t*)BUF;
 		if (header->Type == MessageType::SERVER_RECEIVE_VERSION)
 		{
-			if (len != sizeof(ClientWantsVersionMessage))
+			if (len != sizeof(ServerVersionInfoMessage))
 			{
 				return;
 			}
 
-			ClientWantsVersionMessage *msg = (ClientWantsVersionMessage *)BUF;
-			if (msg->ClientVersion != m_LocalVersion)
+			ServerVersionInfoMessage *msg = (ServerVersionInfoMessage *)BUF;
+			if (msg->Version != m_LocalVersion)
 			{
 				// The versions are different, we need an update
 				m_Status.Code = ClientStatusCode::NEEDS_UPDATE;
-				m_ClientVersion = msg->ClientVersion;
+				m_ClientVersion = msg->Version;
 			}
 			else
 			{
