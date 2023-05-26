@@ -21,6 +21,9 @@ namespace Core
 		virtual uint32 Read(void *dst, uint32 bytes) = 0;
 		virtual uint32 Write(void const *src, uint32 bytes) = 0;
 
+		virtual uint32 ReadTextFile(std::string *out_str) = 0;
+		virtual bool WriteTextFile(const std::string &str) = 0;
+
 		virtual uint32 Print(const char *fmt, ...) = 0;
 
 		virtual bool SetCurrentWorkingDirectory(const std::string &directory) = 0;

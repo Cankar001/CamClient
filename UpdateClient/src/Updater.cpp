@@ -2,6 +2,42 @@
 
 #include <iostream>
 
+namespace utils
+{
+	static bool HasMacroInText(const std::string &str, const std::string &macro)
+	{
+		size_t pos = str.find("#define " + macro);
+		if (pos == std::string::npos)
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	static std::string GetMacroFromText(const std::string &str, const std::string &macro)
+	{
+		std::string macro_search_text = "#define " + macro;
+		size_t pos = str.find(macro_search_text);
+		if (pos == std::string::npos)
+		{
+			return "";
+		}
+
+		std::string result = str;
+		result = result.substr(pos + macro_search_text.size() + 1);
+
+		pos = result.find("\n");
+		if (pos == std::string::npos)
+		{
+			return result;
+		}
+
+		result = result.substr(0, pos);
+		return result;
+	}
+}
+
 Updater::Updater(const UpdateConfig &config)
 	: m_Config(config)
 {
@@ -34,17 +70,22 @@ bool Updater::IsUpdateAvail() const
 {
 	// First load the local client version
 	std::string local_path = m_Config.UpdateTargetPath + "/src/CamVersion.h";
-	m_FileSystem->Open(local_path, "r");
-
-	std::cout << "Trying to read " << local_path.c_str() << std::endl;
-	Core::FileSystemBuffer buffer;
-	if (!m_FileSystem->Read(&buffer, sizeof(buffer)))
+	if (!m_FileSystem->Open(local_path, "r"))
 	{
-		std::cerr << "Could not read local version file!" << std::endl;
+		std::cerr << "Could not open file " << local_path.c_str() << std::endl;
 		return false;
 	}
 
-	std::cout << buffer.Data << std::endl;
+	std::string version_content = "";
+	if (!m_FileSystem->ReadTextFile(&version_content))
+	{
+		std::cerr << "Could not read version file!" << std::endl;
+		return false;
+	}
+
+	std::string local_version_str = utils::GetMacroFromText(version_content, "CAM_VERSION");
+	uint32 local_version = std::stoi(local_version_str);
+	std::cout << "Local version: " << local_version << std::endl;
 
 	m_FileSystem->Close();
 

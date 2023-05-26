@@ -25,6 +25,9 @@ namespace Core
 		virtual uint32 Read(void *dst, uint32 bytes) override;
 		virtual uint32 Write(void const *src, uint32 bytes) override;
 
+		virtual uint32 ReadTextFile(std::string *out_str) override;
+		virtual bool WriteTextFile(const std::string &str) override;
+
 		virtual uint32 Print(const char *fmt, ...) override;
 
 		virtual bool SetCurrentWorkingDirectory(const std::string &directory) override;

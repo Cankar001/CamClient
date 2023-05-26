@@ -45,6 +45,16 @@ namespace Core
 	{
 		return uint32();
 	}
+
+	uint32 LinuxFileSystem::ReadTextFile(std::string *out_str)
+	{
+		return uint32();
+	}
+
+	bool LinuxFileSystem::WriteTextFile(const std::string &str)
+	{
+		return false;
+	}
 	
 	uint32 LinuxFileSystem::Print(const char *fmt, ...)
 	{

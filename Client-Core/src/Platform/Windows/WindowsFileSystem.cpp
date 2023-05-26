@@ -6,6 +6,19 @@
 
 namespace Core
 {
+	namespace utils
+	{
+		void CALLBACK FileIOCompleteRoutine(DWORD errorCode, DWORD numberOfBytesTransfered, LPOVERLAPPED lpOverlapped)
+		{
+		}
+
+		static bool ReadFileInternal(HANDLE file, void *buffer, int64 size)
+		{
+			OVERLAPPED ol = { 0 };
+			return ReadFileEx(file, buffer, (DWORD)size, &ol, FileIOCompleteRoutine);
+		}
+	}
+
 	WindowsFileSystem::WindowsFileSystem()
 		: m_Handle(INVALID_HANDLE_VALUE)
 	{
@@ -80,6 +93,28 @@ namespace Core
 
 		DWORD result;
 		return WriteFile(m_Handle, src, bytes, &result, 0) ? result : 0;
+	}
+
+	uint32 WindowsFileSystem::ReadTextFile(std::string *out_str)
+	{
+		int64 size = Size();
+		if (!out_str)
+		{
+			return -1;
+		}
+
+		char *readBuffer = new char[size + 1];
+		readBuffer[size] = '\0';
+		bool success = utils::ReadFileInternal(m_Handle, &readBuffer[0], size);
+		*out_str = std::string(readBuffer);
+		delete[] readBuffer;
+
+		return success;
+	}
+
+	bool WindowsFileSystem::WriteTextFile(const std::string &str)
+	{
+		return Write((const void*)&str[0], (uint32)str.size());
 	}
 	
 	uint32 WindowsFileSystem::Print(const char *fmt, ...)
