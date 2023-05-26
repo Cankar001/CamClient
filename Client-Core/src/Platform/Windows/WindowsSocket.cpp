@@ -70,8 +70,8 @@ namespace Core
 		int32 sil = sizeof(si);
 		int32 len = recvfrom(m_Socket, (char *)dst, dst_bytes, 0, (struct sockaddr *)&si, &sil);
 
-		addr->host = si.sin_addr.s_addr;
-		addr->port = si.sin_port;
+		addr->Host = si.sin_addr.s_addr;
+		addr->Port = si.sin_port;
 
 		return len;
 	}
@@ -86,15 +86,15 @@ namespace Core
 			return -1;
 		}
 
-		if (addr.value == 0)
+		if (addr.Value == 0)
 		{
 			return 0;
 		}
 
 		SOCKADDR_IN si = {};
 		si.sin_family = AF_INET;
-		si.sin_addr.s_addr = addr.host;
-		si.sin_port = (uint16)addr.port;
+		si.sin_addr.s_addr = addr.Host;
+		si.sin_port = (uint16)addr.Port;
 
 		return sendto(m_Socket, (CHAR const *)src, src_bytes, 0, (SOCKADDR *)&si, sizeof(si));
 	}
@@ -124,8 +124,8 @@ namespace Core
 		if (getaddrinfo(host.c_str(), 0, &hints, &res) == 0)
 		{
 			auto sai = (struct sockaddr_in *)res->ai_addr;
-			addr.host = sai->sin_addr.s_addr;
-			addr.port = htons(port);
+			addr.Host = sai->sin_addr.s_addr;
+			addr.Port = htons(port);
 			freeaddrinfo(res);
 		}
 

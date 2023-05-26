@@ -11,8 +11,14 @@
 /// <returns></returns>
 int main(int argc, char *argv[])
 {
+	Core::FileSystem *sys = Core::FileSystem::Create();
+	std::string cwd = "";
+	sys->SetCurrentWorkingDirectory("../../../");
+	sys->GetCurrentWorkingDirectory(&cwd);
+	std::cout << "Current CWD: " << cwd.c_str() << std::endl;
+
 	UpdateConfig config;
-	config.UpdateTargetPath = "";
+	config.UpdateTargetPath = "../CamClient";
 	config.ServerIP = "127.0.0.1";
 	config.Port = 44200;
 	Updater updater(config);
@@ -26,6 +32,7 @@ int main(int argc, char *argv[])
 	// TODO: Start the camera client
 
 
+	delete sys;
 	return 0;
 }
 

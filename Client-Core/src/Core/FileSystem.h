@@ -1,0 +1,55 @@
+#pragma once
+
+#include "Core.h"
+#include <string>
+
+namespace Core
+{
+	class FileSystem
+	{
+	public:
+
+		virtual ~FileSystem() {}
+
+		virtual bool Open(const std::string &filePath, const std::string &writeMode) = 0;
+		virtual void Close() = 0;
+
+		virtual bool IsValid() const = 0;
+		virtual int64 Seek(int64 offset, int64 origin) = 0;
+		virtual int64 Size() = 0;
+
+		virtual uint32 Read(void *dst, uint32 bytes) = 0;
+		virtual uint32 Write(void const *src, uint32 bytes) = 0;
+
+		virtual uint32 Print(const char *fmt, ...) = 0;
+
+		virtual bool SetCurrentWorkingDirectory(const std::string &directory) = 0;
+		virtual bool GetCurrentWorkingDirectory(std::string *out_directory) = 0;
+
+		static FileSystem *Create();
+	};
+
+	struct FileSystemBuffer
+	{
+		Byte *Data;
+		uint32 Size;
+
+		FileSystemBuffer()
+			: Data(nullptr), Size(0)
+		{
+		}
+
+		inline ~FileSystemBuffer()
+		{
+			Free();
+		}
+
+		inline void Free()
+		{
+			free(Data);
+			Data = nullptr;
+			Size = 0;
+		}
+	};
+}
+

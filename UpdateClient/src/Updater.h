@@ -22,6 +22,21 @@ struct UpdateConfig
 	uint16 Port;
 };
 
+enum class UpdaterStatusCode
+{
+	NONE = 0,
+	BAD_CRC,
+	BAD_SIG,
+	BAD_WRITE
+};
+
+struct UpdaterStatus
+{
+	uint32 Bytes;
+	uint32 Total;
+	UpdaterStatusCode Code;
+};
+
 class Updater
 {
 public:
@@ -36,4 +51,20 @@ private:
 
 	UpdateConfig m_Config;
 	Core::Socket *m_Socket = nullptr;
+	Core::FileSystem *m_FileSystem = nullptr;
+	Core::addr_t m_Host;
+
+	Core::Buffer m_UpdateData;
+	Core::Buffer m_UpdatePieces;
+
+	int64 m_LastUpdateMS;
+	int64 m_LastPieceMS;
+	uint64 m_ClientToken;
+	uint64 m_ServerToken;
+	uint32 m_ClientVersion;
+	uint32 m_ServerVersion;
+	UpdaterStatusCode m_Status;
+	bool m_IsFinished;
+	bool m_IsUpdating;
+	uint32 m_UpdateIdx;
 };

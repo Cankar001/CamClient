@@ -7,11 +7,11 @@ namespace Core
 {
 	// IPV4 host port/pair.
 	union addr_t {
-		uint64 value;
+		uint64 Value;
 
 		struct {
-			uint32 host;
-			uint32 port;
+			uint32 Host;
+			uint32 Port;
 		};
 	};
 
