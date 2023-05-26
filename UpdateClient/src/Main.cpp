@@ -24,10 +24,8 @@ int main(int argc, char *argv[])
 	Updater updater(config);
 
 	// First ask the server, if update is avaiable
-	if (updater.IsUpdateAvail())
-	{
-		updater.Run();
-	}
+	updater.RequestServerVersion();
+	updater.Run();
 
 	// TODO: Start the camera client
 

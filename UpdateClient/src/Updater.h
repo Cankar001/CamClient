@@ -4,6 +4,8 @@
 
 #include <string>
 
+#include "Message.h"
+
 struct UpdateConfig
 {
 	/// <summary>
@@ -25,6 +27,8 @@ struct UpdateConfig
 enum class UpdaterStatusCode
 {
 	NONE = 0,
+	NEEDS_UPDATE,
+	UP_TO_DATE,
 	BAD_CRC,
 	BAD_SIG,
 	BAD_WRITE
@@ -44,8 +48,13 @@ public:
 	Updater(const UpdateConfig &config);
 	~Updater();
 
-	bool IsUpdateAvail() const;
+	void RequestServerVersion();
 	void Run();
+	void Reset();
+
+private:
+
+	void MessageLoop();
 
 private:
 
@@ -62,9 +71,11 @@ private:
 	uint64 m_ClientToken;
 	uint64 m_ServerToken;
 	uint32 m_ClientVersion;
+	uint32 m_LocalVersion;
 	uint32 m_ServerVersion;
-	UpdaterStatusCode m_Status;
+	UpdaterStatus m_Status;
 	bool m_IsFinished;
 	bool m_IsUpdating;
 	uint32 m_UpdateIdx;
+	Signature m_UpdateSignature;
 };
