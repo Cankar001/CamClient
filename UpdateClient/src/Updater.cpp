@@ -156,15 +156,7 @@ void Updater::MessageLoop()
 			{
 				// The versions are different, we need an update
 				m_Status.Code = UpdaterStatusCode::NEEDS_UPDATE;
-
-				// Send update begin request to server
-				ClientUpdateBeginMessage begin_update = {};
-				begin_update.Header.Type = MessageType::CLIENT_UPDATE_BEGIN;
-				begin_update.Header.Version = msg->ClientVersion;
-				begin_update.ClientVersion = msg->ClientVersion;
-				begin_update.ClientToken = 0; // TODO
-				begin_update.ServerToken = 0; // TODO
-				m_Socket->Send(&begin_update, sizeof(begin_update), m_Host);
+				m_ClientVersion = msg->ClientVersion;
 			}
 			else
 			{
@@ -297,6 +289,19 @@ void Updater::MessageLoop()
 			}
 
 			m_ServerToken = msg->ServerToken;
+
+			// If we need an update, send the command to send the update.
+			if (m_ClientVersion != m_LocalVersion)
+			{
+				// Send update begin request to server
+				ClientUpdateBeginMessage begin_update = {};
+				begin_update.Header.Type = MessageType::CLIENT_UPDATE_BEGIN;
+				begin_update.Header.Version = m_ClientVersion;
+				begin_update.ClientVersion = m_ClientVersion;
+				begin_update.ClientToken = m_ClientToken;
+				begin_update.ServerToken = m_ServerToken;
+				m_Socket->Send(&begin_update, sizeof(begin_update), m_Host);
+			}
 		}
 	}
 }
