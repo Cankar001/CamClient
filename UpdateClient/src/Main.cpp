@@ -1,4 +1,5 @@
 #include <iostream>
+#include "Updater.h"
 
 /// <summary>
 /// The client starts automatically, if the camera is turned on.
@@ -10,9 +11,20 @@
 /// <returns></returns>
 int main(int argc, char *argv[])
 {
-	// First ask the server, if update is avaiable
+	UpdateConfig config;
+	config.UpdateTargetPath = "";
+	config.ServerIP = "127.0.0.1";
+	config.Port = 44200;
+	Updater updater(config);
 
-	// Start the camera client
+	// First ask the server, if update is avaiable
+	if (updater.IsUpdateAvail())
+	{
+		updater.Run();
+	}
+
+	// TODO: Start the camera client
+
 
 	return 0;
 }

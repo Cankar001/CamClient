@@ -44,6 +44,6 @@ private:
 	float m_RadiusX = 0, m_RadiusY = 0;
 	float m_Scale = 1;
 
-	ThreadSafeQueue<cv::Mat> m_StreamQueue;
+	Core::ThreadSafeQueue<cv::Mat> m_StreamQueue;
 };
 

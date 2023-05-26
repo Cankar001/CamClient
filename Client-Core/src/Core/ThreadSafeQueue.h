@@ -6,44 +6,47 @@
 #include <mutex>
 #include <condition_variable>
 
-template<typename T>
-class ThreadSafeQueue
+namespace Core
 {
-public:
-
-	ThreadSafeQueue()
-		: q(), m(), c()
+	template<typename T>
+	class ThreadSafeQueue
 	{
-	}
+	public:
 
-	~ThreadSafeQueue()
-	{
-	}
-
-	void Enqueue(const T &t)
-	{
-		std::lock_guard<std::mutex> lock(m);
-		q.push(t);
-		c.notify_one();
-	}
-
-	T Dequeue()
-	{
-		std::unique_lock<std::mutex> lock(m);
-		while (q.empty())
+		ThreadSafeQueue()
+			: q(), m(), c()
 		{
-			c.wait(lock);
 		}
 
-		T value = q.front();
-		q.pop();
-		return value;
-	}
+		~ThreadSafeQueue()
+		{
+		}
 
-private:
+		void Enqueue(const T &t)
+		{
+			std::lock_guard<std::mutex> lock(m);
+			q.push(t);
+			c.notify_one();
+		}
 
-	std::queue<T> q;
-	mutable std::mutex m;
-	std::condition_variable c;
-};
+		T Dequeue()
+		{
+			std::unique_lock<std::mutex> lock(m);
+			while (q.empty())
+			{
+				c.wait(lock);
+			}
+
+			T value = q.front();
+			q.pop();
+			return value;
+		}
+
+	private:
+
+		std::queue<T> q;
+		mutable std::mutex m;
+		std::condition_variable c;
+	};
+}
 

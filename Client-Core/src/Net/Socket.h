@@ -1,0 +1,38 @@
+#pragma once
+
+#include "Core/Core.h"
+#include <string>
+
+namespace Core
+{
+	// IPV4 host port/pair.
+	union addr_t {
+		uint64 value;
+
+		struct {
+			uint32 host;
+			uint32 port;
+		};
+	};
+
+	class Socket
+	{
+	public:
+
+		virtual ~Socket() {}
+
+		virtual bool Open() = 0;
+		virtual void Close() = 0;
+
+		virtual bool Bind(uint16 port) = 0;
+
+		virtual int32 Recv(void *dst, int32 dst_bytes, addr_t *addr) = 0;
+		virtual int32 Send(void const *src, int32 src_bytes, addr_t addr) = 0;
+
+		virtual bool SetNonBlocking(bool enabled) = 0;
+		virtual addr_t Lookup(const std::string &host, uint16 port) = 0;
+
+		static Socket *Create();
+	};
+}
+

@@ -18,10 +18,6 @@ project "Client-Core"
 		"src",
     }
 
-    links
-    {
-    }
-
     defines
 	{
 		"_CRT_SECURE_NO_WARNINGS",
@@ -35,6 +31,11 @@ project "Client-Core"
         {
             "CAM_PLATFORM_WINDOWS",
         }
+
+		links
+		{
+			"Ws2_32.lib"
+		}
 
 	filter "system:macosx"
         systemversion "latest"
