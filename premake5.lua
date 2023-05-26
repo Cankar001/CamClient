@@ -4,7 +4,7 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 include "Dependencies.lua"
 
-workspace "CamClient"
+workspace "Cam"
     architecture "x64"
     configurations { "Debug", "Release" }
 
@@ -26,6 +26,14 @@ workspace "CamClient"
 		include "Client-Core"
 	group ""
 
-	include "CamClient"
-	include "UpdateClient"
+	group "Cam"
+		include "CamClient"
+		include "CamServer"
+		include "CamDisplay"
+	group ""
+
+	group "Updater"
+		include "UpdateClient"
+		include "UpdateServer"
+	group ""
 
