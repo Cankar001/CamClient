@@ -375,6 +375,7 @@ void Client::UpdateProgress(int64 now_ms, Core::addr_t addr)
 				if (m_FileSystem->WriteFile(m_Config.UpdateTargetPath + "/update.zip", m_UpdateData.Ptr, m_UpdateData.Size))
 				{
 					m_IsFinished = true;
+					m_Status.Code = ClientStatusCode::UP_TO_DATE;
 					return;
 				}
 				else

@@ -112,3 +112,4 @@ private:
 	uint32 m_UpdateIdx;
 	Signature m_UpdateSignature;
 };
+
