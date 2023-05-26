@@ -55,6 +55,16 @@ namespace Core
 	{
 		return false;
 	}
+
+	bool LinuxFileSystem::WriteFile(const std::string &filePath, void *src, uint32 bytes)
+	{
+		return false;
+	}
+
+	bool LinuxFileSystem::ReadFile(const std::string &filePath, void *dst, uint32 *outSize)
+	{
+		return false;
+	}
 	
 	uint32 LinuxFileSystem::Print(const char *fmt, ...)
 	{

@@ -7,6 +7,7 @@
 #include "Core/FileSystem.h"
 #include "Core/Crypto.h"
 #include "Core/Timer.h"
+#include "Core/Hash.h"
 
 #include "Net/Net.h"
 

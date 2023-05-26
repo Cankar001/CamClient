@@ -17,6 +17,13 @@ namespace Core
 			OVERLAPPED ol = { 0 };
 			return ReadFileEx(file, buffer, (DWORD)size, &ol, FileIOCompleteRoutine);
 		}
+
+		static int64 GetFileSizeInternal(HANDLE file)
+		{
+			LARGE_INTEGER size;
+			GetFileSizeEx(file, &size);
+			return size.QuadPart;
+		}
 	}
 
 	WindowsFileSystem::WindowsFileSystem()
@@ -82,7 +89,7 @@ namespace Core
 		assert(bytes);
 
 		DWORD result;
-		return ReadFile(m_Handle, dst, bytes, &result, 0) ? result : 0;
+		return ::ReadFile(m_Handle, dst, bytes, &result, 0) ? result : 0;
 	}
 	
 	uint32 WindowsFileSystem::Write(void const *src, uint32 bytes)
@@ -90,9 +97,8 @@ namespace Core
 		assert(src);
 		assert(bytes);
 
-
 		DWORD result;
-		return WriteFile(m_Handle, src, bytes, &result, 0) ? result : 0;
+		return ::WriteFile(m_Handle, src, bytes, &result, 0) ? result : 0;
 	}
 
 	uint32 WindowsFileSystem::ReadTextFile(std::string *out_str)
@@ -115,6 +121,37 @@ namespace Core
 	bool WindowsFileSystem::WriteTextFile(const std::string &str)
 	{
 		return Write((const void*)&str[0], (uint32)str.size());
+	}
+
+	bool WindowsFileSystem::WriteFile(const std::string &filePath, void *src, uint32 bytes)
+	{
+		HANDLE file_handle = CreateFileA(filePath.c_str(), GENERIC_WRITE, FILE_SHARE_WRITE, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+
+		if (file_handle == INVALID_HANDLE_VALUE)
+			return false;
+
+		DWORD written;
+		bool result = ::WriteFile(file_handle, src, (DWORD)bytes, &written, NULL);
+		CloseHandle(file_handle);
+		return result;
+	}
+
+	bool WindowsFileSystem::ReadFile(const std::string &filePath, void *dst, uint32 *outSize)
+	{
+		HANDLE file_handle = CreateFileA(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
+		uint32 size = (uint32)utils::GetFileSizeInternal(file_handle);
+
+		Byte *buffer = new Byte[size];
+		bool result = utils::ReadFileInternal(file_handle, buffer, size);
+		CloseHandle(file_handle);
+
+		if (!result)
+			delete[] buffer;
+
+		if (outSize)
+			*outSize = size;
+
+		return result ? buffer : nullptr;
 	}
 	
 	uint32 WindowsFileSystem::Print(const char *fmt, ...)

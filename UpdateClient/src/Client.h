@@ -22,6 +22,11 @@ struct ClientConfig
 	/// The update server port
 	/// </summary>
 	uint16 Port;
+
+	/// <summary>
+	/// The public key, generated when starting the update client
+	/// </summary>
+	Byte *PublicKey = nullptr;
 };
 
 enum class ClientStatusCode
@@ -75,11 +80,15 @@ public:
 	void Run();
 	void Reset();
 
+	void UpdateProgress(int64 now_ms, Core::addr_t addr);
+
 private:
 
 	void MessageLoop();
 
 private:
+
+	static constexpr uint32 MAX_REQUESTS = 32;
 
 	ClientConfig m_Config;
 	Core::Socket *m_Socket = nullptr;

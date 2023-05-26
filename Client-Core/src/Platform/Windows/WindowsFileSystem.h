@@ -28,6 +28,9 @@ namespace Core
 		virtual uint32 ReadTextFile(std::string *out_str) override;
 		virtual bool WriteTextFile(const std::string &str) override;
 
+		virtual bool WriteFile(const std::string &filePath, void *src, uint32 bytes) override;
+		virtual bool ReadFile(const std::string &filePath, void *dst, uint32 *outSize) override;
+
 		virtual uint32 Print(const char *fmt, ...) override;
 
 		virtual bool SetCurrentWorkingDirectory(const std::string &directory) override;

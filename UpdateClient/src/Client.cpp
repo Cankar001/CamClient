@@ -125,11 +125,25 @@ void Client::Run()
 		if (m_Status.Code == ClientStatusCode::UP_TO_DATE)
 		{
 			// TODO: start CamClient application
+			std::cout << "Starting CamClient..." << std::endl;
 
 			m_Status.Code = ClientStatusCode::NONE;
 		}
 
 		MessageLoop();
+
+		// Process updates.
+		auto now_ms = Core::QueryMS();
+		UpdateProgress(now_ms, m_Host);
+
+		static uint32 last_bytes;
+		if (last_bytes != m_Status.Bytes)
+		{
+			last_bytes = m_Status.Bytes;
+		}
+
+		// Limit the update rate.
+		Core::SleepMS(10);
 	}
 }
 
@@ -303,19 +317,6 @@ void Client::MessageLoop()
 			}
 
 			m_ServerToken = msg->ServerToken;
-
-			// If we need an update, send the command to send the update.
-			if (m_ClientVersion != m_LocalVersion)
-			{
-				// Send update begin request to server
-				ClientUpdateBeginMessage begin_update = {};
-				begin_update.Header.Type = MessageType::CLIENT_UPDATE_BEGIN;
-				begin_update.Header.Version = m_ClientVersion;
-				begin_update.ClientVersion = m_ClientVersion;
-				begin_update.ClientToken = m_ClientToken;
-				begin_update.ServerToken = m_ServerToken;
-				m_Socket->Send(&begin_update, sizeof(begin_update), m_Host);
-			}
 		}
 	}
 }
@@ -333,5 +334,117 @@ void Client::Reset()
 	m_ServerVersion = 0;
 
 	m_UpdateIdx = 0;
+}
+
+void Client::UpdateProgress(int64 now_ms, Core::addr_t addr)
+{
+	if (m_IsFinished)
+	{
+		return;
+	}
+
+	if (!m_IsUpdating)
+	{
+		if (now_ms - m_LastUpdateMS >= 1000)
+		{
+			m_LastUpdateMS = now_ms;
+			m_ClientToken = m_Crypto->GenToken();
+
+			// Send update begin request to server
+			ClientUpdateBeginMessage begin_update = {};
+			begin_update.Header.Type = MessageType::CLIENT_UPDATE_BEGIN;
+			begin_update.Header.Version = m_ClientVersion;
+			begin_update.ClientVersion = m_ClientVersion;
+			begin_update.ClientToken = m_ClientToken;
+			begin_update.ServerToken = m_ServerToken;
+			m_Socket->Send(&begin_update, sizeof(begin_update), m_Host);
+			m_Status.Code = ClientStatusCode::NONE;
+		}
+
+		return;
+	}
+
+	// We are updating
+	if (m_UpdateIdx >= m_UpdatePieces.Size)
+	{
+		uint32 crc = Core::Crc32(m_UpdateData.Ptr, m_UpdateData.Size);
+		if (crc == m_ServerVersion)
+		{
+			if (m_Crypto->TestSignature(m_UpdateSignature.Data, sizeof(m_UpdateSignature.Data), m_UpdateData.Ptr, m_UpdateData.Size, m_Config.PublicKey, sizeof(m_Config.PublicKey)))
+			{
+				if (m_FileSystem->WriteFile(m_Config.UpdateTargetPath + "/update.zip", m_UpdateData.Ptr, m_UpdateData.Size))
+				{
+					m_IsFinished = true;
+					return;
+				}
+				else
+				{
+					m_Status.Code = ClientStatusCode::BAD_WRITE;
+				}
+			}
+			else
+			{
+				m_Status.Code = ClientStatusCode::BAD_SIG;
+			}
+		}
+		else
+		{
+			m_Status.Code = ClientStatusCode::BAD_CRC;
+		}
+
+		Reset();
+		return;
+	}
+
+	// Update in progress, request pieces.
+	if (now_ms - m_LastPieceMS >= 100)
+	{
+		m_LastPieceMS = now_ms;
+
+		ClientUpdatePieceMessage msg = {};
+		msg.Header.Version = m_LocalVersion;
+		msg.Header.Type = MessageType::CLIENT_UPDATE_PIECE;
+		msg.ClientToken = m_ClientToken;
+		msg.ServerToken = m_ServerToken;
+		msg.ServerVersion = m_ServerVersion;
+
+		bool found_missing = false;
+		uint32 end_idx = 0;
+		uint32 num_pieces = 0;
+
+		// Request missing piecees.
+		for (uint32 idx = m_UpdateIdx, end = m_UpdatePieces.Size; idx < end; ++idx)
+		{
+			if (!m_UpdatePieces.Ptr[idx])
+			{
+				// Keep track of the last valid idx.
+				if (!found_missing)
+				{
+					found_missing = true;
+					end_idx = idx;
+				}
+
+				msg.PiecePos = idx * PIECE_BYTES;
+				m_Socket->Send(&msg, sizeof(msg), m_Host);
+
+				num_pieces += 1;
+				if (num_pieces > MAX_REQUESTS)
+				{
+					// Don't send too many.
+					break;
+				}
+			}
+		}
+
+		if (end_idx > m_UpdateIdx)
+		{
+			m_UpdateIdx = end_idx;
+		}
+
+		if (!found_missing)
+		{
+			m_UpdateIdx = m_UpdatePieces.Size;
+		}
+	}
 }
 
