@@ -22,6 +22,10 @@ workspace "CamClient"
 		include "CamClient/vendor/opencv"
 	group ""
 
+	group "Core"
+		include "Client-Core"
+	group ""
+
 	include "CamClient"
 	include "UpdateClient"
 

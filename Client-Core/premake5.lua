@@ -1,0 +1,71 @@
+project "Client-Core"
+    kind "StaticLib"
+    language "C++"
+	cppdialect "C++17"
+	staticruntime "off"
+
+    targetdir ("bin/" .. outputdir .. "/%{prj.name}")
+    objdir ("bin-obj/" .. outputdir .. "/%{prj.name}")
+
+    files
+    { 
+        "src/**.h",
+        "src/**.cpp",
+    }
+
+    includedirs
+    {
+		"src",
+    }
+
+    links
+    {
+    }
+
+    defines
+	{
+		"_CRT_SECURE_NO_WARNINGS",
+		"CAM_LIBRARY_EXPORT"
+	}
+
+    filter "system:windows"
+        systemversion "latest"
+
+        defines
+        {
+            "CAM_PLATFORM_WINDOWS",
+        }
+
+	filter "system:macosx"
+        systemversion "latest"
+		
+        defines
+        {
+            "CAM_PLATFORM_MAC",
+        }
+
+	filter "system:linux"
+		systemversion "latest"
+
+		defines
+        {
+            "CAM_PLATFORM_LINUX",
+        }
+
+    filter "configurations:Debug"
+        symbols "On"
+
+		defines
+		{
+			"CAM_DEBUG",
+		}
+
+    filter "configurations:Release"
+        optimize "On"
+		
+		defines
+		{
+			"CAM_RELEASE",
+			"NDEBUG",
+		}
+

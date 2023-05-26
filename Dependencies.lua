@@ -1,9 +1,9 @@
 IncludeDir = {}
 IncludeDir["opencv"]             = "%{wks.location}/CamClient/vendor/opencv/include/"
+IncludeDir["cam_core"]           = "%{wks.location}/Client-Core/src"
 
 LibDir = {}
 LibDir["opencv_lib_path"]        = "%{wks.location}/CamClient/vendor/opencv/lib"
-
 
 LibDir["opencv_world_debug"]     = "%{wks.location}/CamClient/vendor/opencv/lib/Debug/opencv_world455d.lib"
 LibDir["opencv_text_debug"]      = "%{wks.location}/CamClient/vendor/opencv/lib/Debug/opencv_text455d.lib"

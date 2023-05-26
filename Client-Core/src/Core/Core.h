@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Defines.h"
+
 using Byte = unsigned char;
 
 // Unsigned base types
@@ -52,5 +54,11 @@ typedef int64 intptr;
 
 #ifndef CAM_PLATFORM_THREADS_LIMIT
 #define CAM_PLATFORM_THREADS_LIMIT 64
+#endif
+
+#ifdef CAM_LIBRARY_EXPORT
+#define CAM_API CAM_DLL_EXPORT
+#else
+#define CAM_API CAM_DLL_IMPORT
 #endif
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Core.h"
+
 #include <queue>
 #include <mutex>
 #include <condition_variable>

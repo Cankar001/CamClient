@@ -4,15 +4,9 @@
 
 int main(int argc, char *argv[])
 {
-	Camera c(true);
+	Camera c(false, 1280, 720);
 	c.Stream();
-
-	// Pseudo loop to keep the program running until user decides to shutdown
-//	while (c.IsStreaming())
-//	{
-//	}
 	c.Show();
-
 	c.ReleaseStream();
 
 	return 0;

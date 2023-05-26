@@ -1,10 +1,9 @@
 #pragma once
 
-#include "Core/Core.h"
-#include "Core/ThreadSafeQueue.h"
-
 #include <opencv2/opencv.hpp>
 #include <thread>
+
+#include <Client-Core.h>
 
 class Camera
 {

@@ -9,6 +9,11 @@ project "UpdateClient"
     debugdir ("bin/" .. outputdir .. "/%{prj.name}")
     objdir ("bin-obj/" .. outputdir .. "/%{prj.name}")
 
+	dependson
+	{
+		"Client-Core"
+	}
+
     files
     { 
         "src/**.h",
@@ -18,10 +23,17 @@ project "UpdateClient"
     includedirs
     {
 		"src",
+		"%{IncludeDir.cam_core}"
     }
+	
+	postbuildcommands
+	{
+		--("{COPY} %{wks.location}Client-Core/bin/" .. outputdir .. "/Client-Core/Client-Core.dll %{cfg.targetdir}"),
+	}
 	
 	links
 	{
+		"Client-Core"
 	}
 
     filter "system:windows"

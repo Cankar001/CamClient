@@ -4,6 +4,11 @@ project "CamClient"
 	cppdialect "C++17"
 	staticruntime "off"
 	entrypoint "mainCRTStartup"
+	
+	dependson
+	{
+		"Client-Core"
+	}
 
     targetdir ("bin/" .. outputdir .. "/%{prj.name}")
     debugdir ("bin/" .. outputdir .. "/%{prj.name}")
@@ -18,11 +23,19 @@ project "CamClient"
     includedirs
     {
 		"src",
-		"%{IncludeDir.opencv}"
+		"%{IncludeDir.cam_core}",
+		"%{IncludeDir.opencv}",
     }
 
+    links
+    {
+        "Client-Core"
+    }
+	
 	postbuildcommands
 	{
+		--("{COPY} %{wks.location}Client-Core/bin/" .. outputdir .. "/Client-Core/Client-Core.dll %{cfg.targetdir}"),
+	
 		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_world455d.dll %{cfg.targetdir}"),
 		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_text455d.dll %{cfg.targetdir}"),
 		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_tracking455d.dll %{cfg.targetdir}"),
@@ -61,6 +74,27 @@ project "CamClient"
     filter "system:windows"
         systemversion "latest"
 
+        defines
+        {
+            "CAM_PLATFORM_WINDOWS"
+        }
+
+	filter "system:linux"
+		systemversion "latest"
+		
+		defines
+		{
+			"CAM_PLATFORM_LINUX"
+		}
+
+	filter "system:macos"
+		systemversion "latest"
+		
+		defines
+		{
+			"CAM_PLATFORM_MACOS"
+		}
+
     filter "configurations:Debug"
         defines "CAM_DEBUG"
         symbols "On"
@@ -80,7 +114,7 @@ project "CamClient"
     filter "configurations:Release"
         defines "CAM_RELEASE"
         optimize "On"
-		
+
 		links
 		{
 			"%{LibDir.opencv_world}",

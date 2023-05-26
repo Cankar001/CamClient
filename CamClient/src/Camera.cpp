@@ -122,7 +122,7 @@ cv::Mat Camera::Zoom(cv::Mat frame, std::pair<float, float> center)
 	float min_y = m_CenterY - m_RadiusY;
 	float max_y = m_CenterY + m_RadiusY;
 
-	cv::Rect rect((int32)min_y, (int32)max_y, (int32)min_x, (int32)max_x);
+	cv::Rect rect((int32)min_x, (int32)min_y, (int32)max_x, (int32)max_y);
 	return frame(rect);
 }
 
