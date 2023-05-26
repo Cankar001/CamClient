@@ -1,4 +1,4 @@
-#include "Updater.h"
+#include "Client.h"
 
 #include <iostream>
 
@@ -59,7 +59,7 @@ namespace utils
 	}
 }
 
-Updater::Updater(const UpdateConfig &config)
+Client::Client(const ClientConfig &config)
 	: m_Config(config)
 {
 	m_Socket = Core::Socket::Create();
@@ -79,7 +79,7 @@ Updater::Updater(const UpdateConfig &config)
 	Reset();
 }
 
-Updater::~Updater()
+Client::~Client()
 {
 	delete m_FileSystem;
 	m_FileSystem = nullptr;
@@ -88,7 +88,7 @@ Updater::~Updater()
 	m_Socket = nullptr;
 }
 
-void Updater::RequestServerVersion()
+void Client::RequestServerVersion()
 {
 	// First load the local client version
 	uint32 local_version = utils::GetLocalVersion(m_FileSystem, m_Config.UpdateTargetPath);
@@ -108,10 +108,10 @@ void Updater::RequestServerVersion()
 	message.Header.Type = MessageType::CLIENT_REQUEST_VERSION;
 	message.Header.Version = local_version;
 	m_Socket->Send(&message, sizeof(message), m_Host);
-	m_Status.Code = UpdaterStatusCode::NONE;
+	m_Status.Code = ClientStatusCode::NONE;
 }
 
-void Updater::Run()
+void Client::Run()
 {
 	for (;;)
 	{
@@ -119,7 +119,7 @@ void Updater::Run()
 	}
 }
 
-void Updater::MessageLoop()
+void Client::MessageLoop()
 {
 	for (;;)
 	{
@@ -155,13 +155,13 @@ void Updater::MessageLoop()
 			if (msg->ClientVersion != m_LocalVersion)
 			{
 				// The versions are different, we need an update
-				m_Status.Code = UpdaterStatusCode::NEEDS_UPDATE;
+				m_Status.Code = ClientStatusCode::NEEDS_UPDATE;
 				m_ClientVersion = msg->ClientVersion;
 			}
 			else
 			{
 				// The versions are the same, we have the latest version
-				m_Status.Code = UpdaterStatusCode::UP_TO_DATE;
+				m_Status.Code = ClientStatusCode::UP_TO_DATE;
 			}
 		}
 		else if (header->Type == MessageType::SERVER_UPDATE_BEGIN)
@@ -306,7 +306,7 @@ void Updater::MessageLoop()
 	}
 }
 
-void Updater::Reset()
+void Client::Reset()
 {
 	m_UpdateData.Free();
 	m_UpdatePieces.Free();

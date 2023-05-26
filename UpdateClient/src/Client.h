@@ -6,7 +6,7 @@
 
 #include "Message.h"
 
-struct UpdateConfig
+struct ClientConfig
 {
 	/// <summary>
 	/// The path, where the received files from the update server should be stored to
@@ -24,7 +24,7 @@ struct UpdateConfig
 	uint16 Port;
 };
 
-enum class UpdaterStatusCode
+enum class ClientStatusCode
 {
 	NONE = 0,
 	NEEDS_UPDATE,
@@ -34,19 +34,19 @@ enum class UpdaterStatusCode
 	BAD_WRITE
 };
 
-struct UpdaterStatus
+struct ClientStatus
 {
 	uint32 Bytes;
 	uint32 Total;
-	UpdaterStatusCode Code;
+	ClientStatusCode Code;
 };
 
-class Updater
+class Client
 {
 public:
 
-	Updater(const UpdateConfig &config);
-	~Updater();
+	Client(const ClientConfig &config);
+	~Client();
 
 	void RequestServerVersion();
 	void Run();
@@ -58,7 +58,7 @@ private:
 
 private:
 
-	UpdateConfig m_Config;
+	ClientConfig m_Config;
 	Core::Socket *m_Socket = nullptr;
 	Core::FileSystem *m_FileSystem = nullptr;
 	Core::addr_t m_Host;
@@ -73,7 +73,7 @@ private:
 	uint32 m_ClientVersion;
 	uint32 m_LocalVersion;
 	uint32 m_ServerVersion;
-	UpdaterStatus m_Status;
+	ClientStatus m_Status;
 	bool m_IsFinished;
 	bool m_IsUpdating;
 	uint32 m_UpdateIdx;

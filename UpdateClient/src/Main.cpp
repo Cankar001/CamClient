@@ -1,5 +1,6 @@
 #include <iostream>
-#include "Updater.h"
+
+#include "Client.h"
 
 /// <summary>
 /// The client starts automatically, if the camera is turned on.
@@ -17,18 +18,17 @@ int main(int argc, char *argv[])
 	sys->GetCurrentWorkingDirectory(&cwd);
 	std::cout << "Current CWD: " << cwd.c_str() << std::endl;
 
-	UpdateConfig config;
+	ClientConfig config;
 	config.UpdateTargetPath = "../CamClient";
 	config.ServerIP = "127.0.0.1";
 	config.Port = 44200;
-	Updater updater(config);
+	Client c(config);
 
 	// First ask the server, if update is avaiable
-	updater.RequestServerVersion();
-	updater.Run();
+	c.RequestServerVersion();
 
-	// TODO: Start the camera client
-
+	// Then run the client
+	c.Run();
 
 	delete sys;
 	return 0;
