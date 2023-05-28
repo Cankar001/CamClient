@@ -49,8 +49,8 @@ namespace Core
 
 	protected:
 
-		Crypto *m_Crypto;
-		IPTable *m_IPTable;
+		Crypto *m_Crypto = nullptr;
+		IPTable *m_IPTable = nullptr;
 		uint32 m_Num;
 		Node m_Data[65536];
 		Node *m_Table[32768];

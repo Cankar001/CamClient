@@ -73,7 +73,7 @@ namespace Core
 			}
 			else
 			{
-				for (auto &iter : m_Data)
+				for (Node &iter : m_Data)
 				{
 					if (now_ms - iter.TimeMS > 30000)
 					{

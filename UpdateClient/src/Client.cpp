@@ -2,62 +2,7 @@
 
 #include <iostream>
 
-namespace utils
-{
-	static bool HasMacroInText(const std::string &str, const std::string &macro)
-	{
-		size_t pos = str.find("#define " + macro);
-		if (pos == std::string::npos)
-		{
-			return false;
-		}
-
-		return true;
-	}
-
-	static std::string GetMacroFromText(const std::string &str, const std::string &macro)
-	{
-		std::string macro_search_text = "#define " + macro;
-		size_t pos = str.find(macro_search_text);
-		if (pos == std::string::npos)
-		{
-			return "";
-		}
-
-		std::string result = str;
-		result = result.substr(pos + macro_search_text.size() + 1);
-
-		pos = result.find("\n");
-		if (pos == std::string::npos)
-		{
-			return result;
-		}
-
-		result = result.substr(0, pos);
-		return result;
-	}
-
-	static uint32 GetLocalVersion(Core::FileSystem *filesystem, const std::string &rootPath)
-	{
-		std::string local_path = rootPath + "/src/CamVersion.h";
-		if (!filesystem->Open(local_path, "r"))
-		{
-			std::cerr << "Could not open file " << local_path.c_str() << std::endl;
-			return 0;
-		}
-
-		std::string version_content = "";
-		if (!filesystem->ReadTextFile(&version_content))
-		{
-			std::cerr << "Could not read version file!" << std::endl;
-			return 0;
-		}
-
-		std::string local_version_str = utils::GetMacroFromText(version_content, "CAM_VERSION");
-		filesystem->Close();
-		return std::stoi(local_version_str);
-	}
-}
+#include "Utils/Utils.h"
 
 Client::Client(const ClientConfig &config)
 	: m_Config(config)
@@ -95,7 +40,7 @@ Client::~Client()
 void Client::RequestServerVersion()
 {
 	// First load the local client version
-	uint32 local_version = utils::GetLocalVersion(m_FileSystem, m_Config.UpdateTargetPath);
+	uint32 local_version = Core::utils::GetLocalVersion(m_FileSystem, m_Config.UpdateTargetPath);
 	if (!local_version)
 	{
 		std::cerr << "Could not retrieve the local version!" << std::endl;

@@ -17,8 +17,9 @@ int main(int argc, char *argv[])
 	config.TargetUpdatePath = "../CamClient";
 	config.TargetBinaryPath = "../CamClient/bin";
 
-	Server s(config);
-	s.Run();
+	Server *s = new Server(config);
+	s->Run();
+	delete s;
 
 	delete sys;
 	return 0;

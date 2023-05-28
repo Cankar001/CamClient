@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include "Utils/Utils.h"
+
 Server::Server(const ServerConfig &config)
 	: m_Config(config)
 {
@@ -13,11 +15,20 @@ Server::Server(const ServerConfig &config)
 	m_Socket = Core::Socket::Create();
 	m_Crypto = Core::Crypto::Create();
 	m_FileSystem = Core::FileSystem::Create();
-	m_Clients = Core::Clients(m_Crypto, &m_IPTable);
+	m_IPTable = new Core::IPTable();
+	m_Clients = new Core::Clients(m_Crypto, m_IPTable);
+
+	m_LocalVersion = Core::utils::GetLocalVersion(m_FileSystem, m_Config.TargetUpdatePath);
 }
 
 Server::~Server()
 {
+	delete m_Clients;
+	m_Clients = nullptr;
+
+	delete m_IPTable;
+	m_IPTable = nullptr;
+
 	delete m_FileSystem;
 	m_FileSystem = nullptr;
 
@@ -84,7 +95,7 @@ bool Server::Step()
 	{
 		if (len != sizeof(ClientUpdateBeginMessage))
 		{
-			return;
+			return true;
 		}
 
 		ClientUpdateBeginMessage *msg = (ClientUpdateBeginMessage *)BUF;
@@ -92,46 +103,46 @@ bool Server::Step()
 		// You probably want to check that client_version isn't 0 here, but we use that for demoing.
 
 		int64 now_ms = Core::QueryMS();
-		auto client = m_Clients.Insert(addr, now_ms);
+		auto client = m_Clients->Insert(addr, now_ms);
 
 		if (!client)
 		{
-			return;
+			return true;
 		}
 
 		if (!client->IsBandwidthAvailable(now_ms))
 		{
-			return;
+			return true;
 		}
 
 		if (msg->ServerToken != client->ServerToken)
 		{
 			ServerUpdateTokenMessage res = {};
 			res.Header.Type = MessageType::SERVER_UPDATE_TOKEN;
-			res.Header.Version = VERSION;
+			res.Header.Version = m_LocalVersion;
 			res.ClientToken = msg->ClientToken;
 			res.ServerToken = client->ServerToken;
 			m_Socket->Send(&res, sizeof(res), addr);
 
 			client->Bandwidth += sizeof(ServerUpdateTokenMessage);
 
-			return;
+			return true;
 		}
 
 		if (!UpdateRefresh(now_ms))
 		{
-			return;
+			return true;
 		}
 
 		if (msg->ClientVersion == m_UpdateVersion)
 		{
-			return;
+			return true;
 		}
 
 		ServerUpdateBeginMessage res;
 		memset(&res, 0, sizeof(res));
 
-		res.Header.Version = VERSION;
+		res.Header.Version = m_LocalVersion;
 		res.Header.Type = MessageType::SERVER_UPDATE_BEGIN;
 		res.ClientToken = msg->ClientToken;
 		res.ServerToken = client->ServerToken;
@@ -146,47 +157,47 @@ bool Server::Step()
 	{
 		if (len != sizeof(ClientUpdatePieceMessage))
 		{
-			return;
+			return true;
 		}
 
 		int64 now_ms = Core::QueryMS();
 
 		if (!UpdateRefresh(now_ms))
 		{
-			return;
+			return true;
 		}
 
 		ClientUpdatePieceMessage *msg = (ClientUpdatePieceMessage *)BUF;
 
 		if (msg->ServerVersion != m_UpdateVersion)
 		{
-			return;
+			return true;
 		}
 
 		if (msg->PiecePos >= m_UpdateFile.Size)
 		{
-			return;
+			return true;
 		}
 
-		auto client = m_Clients.Insert(addr, now_ms);
+		auto client = m_Clients->Insert(addr, now_ms);
 
 		if (!client)
 		{
-			return;
+			return true;
 		}
 
 		if (!client->IsBandwidthAvailable(now_ms))
 		{
-			return;
+			return true;
 		}
 
 		if (msg->ServerToken != client->ServerToken)
 		{
-			return;
+			return true;
 		}
 
 		ServerUpdatePieceMessage res = {};
-		res.Header.Version = VERSION;
+		res.Header.Version = m_LocalVersion;
 		res.Header.Type = MessageType::SERVER_UPDATE_PIECE;
 		res.ClientToken = msg->ClientToken;
 		res.ServerToken = client->ServerToken;
@@ -207,14 +218,14 @@ bool Server::Step()
 	{
 		if (len != sizeof(ClientWantsVersionMessage))
 		{
-			return;
+			return true;
 		}
 
 	//	ClientWantsVersionMessage *msg = (ClientWantsVersionMessage *)BUF;
 		
 		ServerVersionInfoMessage res = {};
 		res.Header.Type = MessageType::SERVER_RECEIVE_VERSION;
-		res.Header.Version = VERSION;
+		res.Header.Version = m_LocalVersion;
 		res.Version = m_UpdateVersion;
 		m_Socket->Send(&res, sizeof(res), addr);
 	}
@@ -245,8 +256,8 @@ bool Server::UpdateRefresh(int64 now_ms)
 				file.read(&update_sig, sizeof(update_sig));
 			}
 		}
-	}
 	*/
+	}
 
 	return (m_UpdateFile.Data != nullptr);
 }
