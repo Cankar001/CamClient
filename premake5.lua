@@ -4,7 +4,7 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 include "Dependencies.lua"
 
-workspace "Cam"
+workspace "CamVision"
     architecture "x64"
     configurations { "Debug", "Release" }
 
