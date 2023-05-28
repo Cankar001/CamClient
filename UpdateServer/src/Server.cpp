@@ -9,7 +9,6 @@ Server::Server(const ServerConfig &config)
 {
 	m_LastUpdateCheckMS = 0;
 	m_LastUpdateWriteMS = 0;
-	m_UpdateVersion = 0;
 	m_UpdateSignature = {};
 
 	m_Socket = Core::Socket::Create();
@@ -19,6 +18,7 @@ Server::Server(const ServerConfig &config)
 	m_Clients = new Core::Clients(m_Crypto, m_IPTable);
 
 	m_LocalVersion = Core::utils::GetLocalVersion(m_FileSystem, m_Config.TargetUpdatePath);
+	std::cout << "Current Server version: " << m_LocalVersion << std::endl;
 }
 
 Server::~Server()
@@ -85,7 +85,7 @@ bool Server::Step()
 	}
 
 	auto header = (header_t *)BUF;
-	if (header->Version != m_UpdateVersion)
+	if (header->Version != m_LocalVersion)
 	{
 		std::cerr << "Header version does not match the server version!" << std::endl;
 		return true;
@@ -99,8 +99,6 @@ bool Server::Step()
 		}
 
 		ClientUpdateBeginMessage *msg = (ClientUpdateBeginMessage *)BUF;
-
-		// You probably want to check that client_version isn't 0 here, but we use that for demoing.
 
 		int64 now_ms = Core::QueryMS();
 		auto client = m_Clients->Insert(addr, now_ms);
@@ -134,7 +132,7 @@ bool Server::Step()
 			return true;
 		}
 
-		if (msg->ClientVersion == m_UpdateVersion)
+		if (msg->ClientVersion == m_LocalVersion)
 		{
 			return true;
 		}
@@ -146,7 +144,7 @@ bool Server::Step()
 		res.Header.Type = MessageType::SERVER_UPDATE_BEGIN;
 		res.ClientToken = msg->ClientToken;
 		res.ServerToken = client->ServerToken;
-		res.ServerVersion = m_UpdateVersion;
+		res.ServerVersion = m_LocalVersion;
 		res.UpdateSize = m_UpdateFile.Size;
 		res.UpdateSignature = m_UpdateSignature;
 		m_Socket->Send(&res, sizeof(res), addr);
@@ -169,7 +167,7 @@ bool Server::Step()
 
 		ClientUpdatePieceMessage *msg = (ClientUpdatePieceMessage *)BUF;
 
-		if (msg->ServerVersion != m_UpdateVersion)
+		if (msg->ServerVersion != m_LocalVersion)
 		{
 			return true;
 		}
@@ -201,7 +199,7 @@ bool Server::Step()
 		res.Header.Type = MessageType::SERVER_UPDATE_PIECE;
 		res.ClientToken = msg->ClientToken;
 		res.ServerToken = client->ServerToken;
-		res.ServerVersion = m_UpdateVersion;
+		res.ServerVersion = m_LocalVersion;
 		res.PiecePos = msg->PiecePos;
 		res.PieceSize = (uint16)Core::utils::Min<uint32>(m_UpdateFile.Size - msg->PiecePos, PIECE_BYTES);
 
@@ -221,12 +219,13 @@ bool Server::Step()
 			return true;
 		}
 
-	//	ClientWantsVersionMessage *msg = (ClientWantsVersionMessage *)BUF;
+		ClientWantsVersionMessage *msg = (ClientWantsVersionMessage *)BUF;
+		uint32 client_version = msg->LocalVersion;
 		
 		ServerVersionInfoMessage res = {};
 		res.Header.Type = MessageType::SERVER_RECEIVE_VERSION;
 		res.Header.Version = m_LocalVersion;
-		res.Version = m_UpdateVersion;
+		res.Version = m_LocalVersion;
 		m_Socket->Send(&res, sizeof(res), addr);
 	}
 

@@ -57,7 +57,6 @@ private:
 	int64 m_LastUpdateCheckMS;
 	int64 m_LastUpdateWriteMS;
 	uint32 m_LocalVersion;
-	uint32 m_UpdateVersion;
 	Signature m_UpdateSignature;
 	Core::FileSystemBuffer m_UpdateFile;
 };
