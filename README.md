@@ -1,16 +1,6 @@
-# CamClient
+# CamVision
 
-This client opens a camera feed and does multiple 
-calculations with each current frame. 
-
-First, it does a pedestrian detection, 
-to ensure that moving humans get detected, 
-if they are not very close to the camera. 
-
-If a human gets near the camera, a face detection is 
-run as well, where the client compares each face 
-in the frame with pictures of humans, 
-uploaded to the `profiles` folder.
+CamVision is an open source security camera project. It uses OpenCV for image analysis and has a server/client architecture. Each client can either be a camera device or a display. Camera clients analyze the footage locally with opencv, and send the frames to the server, if movement is detected. The server stores the video and also sends the frames to all registered display clients, which show the video on connected monitors.
 
 # Getting started
 
@@ -23,4 +13,8 @@ git clone https://github.com/Cankar001/CamClient.git
 ```shell
 cd Scripts && python Setup.py
 ```
+
+# Hardware
+
+Hardware list is coming soon
 
