@@ -27,6 +27,8 @@ Server::Server(const ServerConfig &config)
 
 Server::~Server()
 {
+	Core::FileSystemWatcher::Stop();
+
 	delete m_Clients;
 	m_Clients = nullptr;
 
@@ -72,7 +74,7 @@ void Server::Run()
 	std::cerr << "error: socket creation failed." << std::endl;
 }
 
-bool Server::LoadUpdateFile()
+bool Server::LoadUpdateFile(bool forceDeleteSignature)
 {
 	// First check, if the update path is valid
 	std::string update_path = m_Config.TargetBinaryPath;
@@ -134,6 +136,36 @@ bool Server::LoadUpdateFile()
 	m_FileSystem->Read(m_UpdateFile.Data, (uint32)update_file_size);
 	m_FileSystem->Close();
 
+	if (forceDeleteSignature)
+	{
+		if (m_FileSystem->FileExists(m_Config.PrivateKeyPath))
+		{
+			if (!m_FileSystem->RemoveFile(m_Config.PrivateKeyPath))
+			{
+				std::cerr << "Could not remove private key!" << std::endl;
+				return false;
+			}
+		}
+
+		if (m_FileSystem->FileExists(m_Config.PublicKeyPath))
+		{
+			if (!m_FileSystem->RemoveFile(m_Config.PublicKeyPath))
+			{
+				std::cerr << "Could not remove public key!" << std::endl;
+				return false;
+			}
+		}
+
+		if (m_FileSystem->FileExists(m_Config.SignaturePath))
+		{
+			if (!m_FileSystem->RemoveFile(m_Config.SignaturePath))
+			{
+				std::cerr << "Could not remove signature!" << std::endl;
+				return false;
+			}
+		}
+	}
+
 	Core::Crypto::key_t private_key, public_key;
 	if (m_FileSystem->FileExists(m_Config.PrivateKeyPath))
 	{
@@ -163,7 +195,13 @@ bool Server::LoadUpdateFile()
 	}
 
 	// make the signature for the file
-	if (!m_Crypto->SignSignature(m_UpdateSignature.Data, sizeof(m_UpdateSignature.Data), m_UpdateFile.Data, m_UpdateFile.Size, private_key.Data, private_key.Size))
+	if (!m_Crypto->SignSignature(
+		m_UpdateSignature.Data, 
+		sizeof(m_UpdateSignature.Data), 
+		m_UpdateFile.Data, 
+		m_UpdateFile.Size, 
+		private_key.Data, 
+		private_key.Size))
 	{
 		std::cerr << "Could not sign the update!" << std::endl;
 		return false;
@@ -179,10 +217,13 @@ bool Server::LoadUpdateFile()
 	}
 
 	// Now write the security files
-	if (!m_FileSystem->WriteFile(m_Config.PrivateKeyPath, private_key.Data, private_key.Size))
+	if (!m_FileSystem->FileExists(m_Config.PrivateKeyPath))
 	{
-		std::cerr << "Could not write private key file!" << std::endl;
-		return false;
+		if (!m_FileSystem->WriteFile(m_Config.PrivateKeyPath, private_key.Data, private_key.Size))
+		{
+			std::cerr << "Could not write private key file!" << std::endl;
+			return false;
+		}
 	}
 
 	if (!m_FileSystem->WriteFile(m_Config.PublicKeyPath, public_key.Data, public_key.Size))
@@ -202,6 +243,22 @@ bool Server::LoadUpdateFile()
 
 void Server::StartFileWatcher()
 {
+	Server *instance = this;
+	Core::FileSystemWatcher::Start(m_Config.TargetBinaryPath, [instance](const Core::FileSystemWatcherContext &context) mutable
+	{
+		std::cout << "Something happened with file " << context.FilePath.c_str() << std::endl;
+		switch (context.Action)
+		{
+			case Core::FileSystemWatcherAction::Added:
+			case Core::FileSystemWatcherAction::Modified:
+			case Core::FileSystemWatcherAction::Removed:
+			case Core::FileSystemWatcherAction::Renamed:
+				instance->m_UpdateFile.Free();
+				instance->m_UpdateSignature = {};
+				instance->LoadUpdateFile(true);
+				break;
+		}
+	});
 }
 
 bool Server::Step()

@@ -30,6 +30,8 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
+	s->StartFileWatcher();
+
 	s->Run();
 
 	delete s;

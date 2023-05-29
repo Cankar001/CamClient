@@ -59,7 +59,7 @@ public:
 	/// Loads up the directory and assembles the update.
 	/// </summary>
 	/// <returns>Returns true, if the update was built successfully and if the server is ready to run.</returns>
-	bool LoadUpdateFile();
+	bool LoadUpdateFile(bool forceDeleteSignature = false);
 
 	/// <summary>
 	/// Watches the update path and automatically sends the new update to all clients

@@ -158,7 +158,7 @@ void Client::MessageLoop()
 			// Verify that the update size is reasonable (<100MB).
 			if (msg->UpdateSize == 0 || msg->UpdateSize >= 100000000)
 			{
-				std::cerr << "Update size was very unrealistic!" << std::endl;
+				std::cerr << "Update size was very unrealistic! Size: " << msg->UpdateSize << std::endl;
 				return;
 			}
 
