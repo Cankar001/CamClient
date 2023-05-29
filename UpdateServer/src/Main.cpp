@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
 	config.SignaturePath = "../CamClient/signature.sig";
 
 	Server *s = new Server(config);
-	if (!s->LoadUpdateFile())
+	if (!s->LoadUpdateFile(true))
 	{
 		std::cerr << "Could not load the update!" << std::endl;
 

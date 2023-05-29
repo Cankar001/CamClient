@@ -78,6 +78,18 @@ void Client::Run()
 
 			m_Status.Code = ClientStatusCode::NONE;
 		}
+		else if (m_Status.Code == ClientStatusCode::BAD_CRC)
+		{
+			std::cerr << "ERROR: Bad CRC from last update." << std::endl;
+		}
+		else if (m_Status.Code == ClientStatusCode::BAD_SIG)
+		{
+			std::cerr << "ERROR: Bad Signature from last update." << std::endl;
+		}
+		else if (m_Status.Code == ClientStatusCode::BAD_WRITE)
+		{
+			std::cerr << "ERROR: Bad Write from last update." << std::endl;
+		}
 
 		MessageLoop();
 
@@ -155,8 +167,8 @@ void Client::MessageLoop()
 
 			ServerUpdateBeginMessage *msg = (ServerUpdateBeginMessage *)BUF;
 			
-			// Verify that the update size is reasonable (<100MB).
-			if (msg->UpdateSize == 0 || msg->UpdateSize >= 100000000)
+			// Verify that the update size is reasonable (<200MB).
+			if (msg->UpdateSize == 0 || msg->UpdateSize >= (200 * 1024 * 1024))
 			{
 				std::cerr << "Update size was very unrealistic! Size: " << msg->UpdateSize << std::endl;
 				return;
@@ -184,6 +196,7 @@ void Client::MessageLoop()
 			m_Status.Total = m_UpdateData.Size;
 
 			m_IsUpdating = true;
+			m_IsFinished = false;
 		}
 		else if (header->Type == MessageType::SERVER_UPDATE_PIECE)
 		{
@@ -362,6 +375,7 @@ void Client::UpdateProgress(int64 now_ms, Core::addr_t addr)
 	{
 		m_LastPieceMS = now_ms;
 
+		std::cout << "Sending update piece request..." << std::endl;
 		ClientUpdatePieceMessage msg = {};
 		msg.Header.Version = m_LocalVersion;
 		msg.Header.Type = MessageType::CLIENT_UPDATE_PIECE;
