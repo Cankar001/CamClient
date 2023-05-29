@@ -12,6 +12,7 @@ Server::Server(const ServerConfig &config)
 {
 	m_LastUpdateCheckMS = 0;
 	m_LastUpdateWriteMS = 0;
+	m_ServerVersion = 0;
 	m_UpdateSignature = {};
 
 	m_Socket = Core::Socket::Create();
@@ -87,6 +88,7 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature)
 	}
 
 	// then delete an existing update file
+	/*
 	if (m_FileSystem->FileExists(update_file))
 	{
 		if (!m_FileSystem->RemoveFile(update_file))
@@ -126,6 +128,7 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature)
 		delete[] data;
 		data = nullptr;
 	}
+	*/
 
 	std::cout << "Added all files." << std::endl;
 
@@ -238,6 +241,14 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature)
 		return false;
 	}
 
+	m_ServerVersion = Core::Crc32(m_UpdateFile.Data, m_UpdateFile.Size);
+	m_PublicKey.Size = public_key.Size;
+	memcpy(m_PublicKey.Data, public_key.Data, sizeof(public_key.Data));
+	std::cout << "Generated server crc: " << m_ServerVersion << std::endl;
+	std::cout << "Loaded update with size " << m_UpdateFile.Size << std::endl;
+
+//	free(public_key.Data);
+//	free(private_key.Data);
 	return true;
 }
 
@@ -326,7 +337,7 @@ bool Server::Step()
 		res.Header.Type = MessageType::SERVER_UPDATE_BEGIN;
 		res.ClientToken = msg->ClientToken;
 		res.ServerToken = client->ServerToken;
-		res.ServerVersion = m_LocalVersion;
+		res.ServerVersion = m_ServerVersion;
 		res.UpdateSize = m_UpdateFile.Size;
 		res.UpdateSignature = m_UpdateSignature;
 		m_Socket->Send(&res, sizeof(res), addr);
@@ -378,7 +389,7 @@ bool Server::Step()
 		res.Header.Type = MessageType::SERVER_UPDATE_PIECE;
 		res.ClientToken = msg->ClientToken;
 		res.ServerToken = client->ServerToken;
-		res.ServerVersion = m_LocalVersion;
+		res.ServerVersion = m_ServerVersion;
 		res.PiecePos = msg->PiecePos;
 		res.PieceSize = (uint16)Core::utils::Min<uint32>(m_UpdateFile.Size - msg->PiecePos, PIECE_BYTES);
 
@@ -407,6 +418,8 @@ bool Server::Step()
 		res.Header.Type = MessageType::SERVER_RECEIVE_VERSION;
 		res.Header.Version = m_LocalVersion;
 		res.Version = m_LocalVersion;
+		res.PublicKey.Size = m_PublicKey.Size;
+		memcpy(res.PublicKey.Data, m_PublicKey.Data, sizeof(m_PublicKey.Data));
 		m_Socket->Send(&res, sizeof(res), addr);
 	}
 

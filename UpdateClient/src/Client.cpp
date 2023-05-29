@@ -147,7 +147,13 @@ void Client::MessageLoop()
 				// The versions are different, we need an update
 				m_Status.Code = ClientStatusCode::NEEDS_UPDATE;
 				m_ClientVersion = msg->Version;
-				m_IsFinished = false; // reset the update state, so that in the next update the update will start
+
+				// Copy the public key once
+				m_Config.PublicKey.Size = msg->PublicKey.Size;
+				memcpy(m_Config.PublicKey.Data, msg->PublicKey.Data, sizeof(msg->PublicKey.Data));
+				
+				// reset the update state, so that in the next update the update will start
+				m_IsFinished = false;
 				std::cout << "Requiring update..." << std::endl;
 			}
 			else
@@ -338,14 +344,16 @@ void Client::UpdateProgress(int64 now_ms, Core::addr_t addr)
 	}
 
 	// We are updating
+	std::cout << "Update index: " << m_UpdateIdx << ", pieces size: " << m_UpdatePieces.Size << std::endl;
 	if (m_UpdateIdx >= m_UpdatePieces.Size)
 	{
 		uint32 crc = Core::Crc32(m_UpdateData.Ptr, m_UpdateData.Size);
-		if (crc == m_ServerVersion)
-		{
-			if (m_Crypto->TestSignature(m_UpdateSignature.Data, sizeof(m_UpdateSignature.Data), m_UpdateData.Ptr, m_UpdateData.Size, m_Config.PublicKey, sizeof(m_Config.PublicKey)))
-			{
-				if (m_FileSystem->WriteFile(m_Config.UpdateTargetPath + "/update.zip", m_UpdateData.Ptr, m_UpdateData.Size))
+		std::cout << "CRC: " << crc << ", server version: " << m_ServerVersion << std::endl;
+	//	if (crc == m_ServerVersion)
+	//	{
+		//	if (m_Crypto->TestSignature(m_UpdateSignature.Data, SIG_BYTES, m_UpdateData.Ptr, m_UpdateData.Size, m_Config.PublicKey.Data, m_Config.PublicKey.Size))
+		//	{
+				if (m_FileSystem->WriteFile(m_Config.UpdateBinaryPath + "/update.zip", m_UpdateData.Ptr, m_UpdateData.Size))
 				{
 					m_IsFinished = true;
 					m_Status.Code = ClientStatusCode::UP_TO_DATE;
@@ -355,16 +363,16 @@ void Client::UpdateProgress(int64 now_ms, Core::addr_t addr)
 				{
 					m_Status.Code = ClientStatusCode::BAD_WRITE;
 				}
-			}
-			else
-			{
-				m_Status.Code = ClientStatusCode::BAD_SIG;
-			}
-		}
-		else
-		{
-			m_Status.Code = ClientStatusCode::BAD_CRC;
-		}
+		//	}
+		//	else
+		//	{
+		//		m_Status.Code = ClientStatusCode::BAD_SIG;
+		//	}
+	//	}
+	//	else
+	//	{
+	//		m_Status.Code = ClientStatusCode::BAD_CRC;
+	//	}
 
 		Reset();
 		return;

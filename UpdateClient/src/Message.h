@@ -62,6 +62,7 @@ struct ServerVersionInfoMessage
 {
 	header_t Header;
 	uint32 Version;
+	Core::Crypto::key_t PublicKey;
 };
 
 struct ServerUpdateBeginMessage

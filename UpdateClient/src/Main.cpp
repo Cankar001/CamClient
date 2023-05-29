@@ -26,9 +26,9 @@ int main(int argc, char *argv[])
 	// Create the client
 	ClientConfig config;
 	config.UpdateTargetPath = "../CamClient";
+	config.UpdateBinaryPath = "../CamClient/new_update";
 	config.ServerIP = "127.0.0.1";
 	config.Port = 44200;
-	config.PublicKey = nullptr; // TODO: generate this
 	Client c(config);
 
 	// Run the client

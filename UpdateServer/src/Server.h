@@ -79,10 +79,13 @@ private:
 	Core::IPTable *m_IPTable = nullptr;
 	Core::Clients *m_Clients = nullptr;
 
+	Core::Crypto::key_t m_PublicKey = {};
+
 	// Update data.
 	int64 m_LastUpdateCheckMS;
 	int64 m_LastUpdateWriteMS;
 	uint32 m_LocalVersion;
+	uint32 m_ServerVersion;
 	Signature m_UpdateSignature;
 	Core::FileSystemBuffer m_UpdateFile;
 };

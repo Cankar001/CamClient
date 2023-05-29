@@ -14,6 +14,11 @@ struct ClientConfig
 	std::string UpdateTargetPath;
 
 	/// <summary>
+	/// 
+	/// </summary>
+	std::string UpdateBinaryPath;
+
+	/// <summary>
 	/// The update server ip
 	/// </summary>
 	std::string ServerIP;
@@ -26,7 +31,7 @@ struct ClientConfig
 	/// <summary>
 	/// The public key, generated when starting the update client
 	/// </summary>
-	Byte *PublicKey = nullptr;
+	Core::Crypto::key_t PublicKey = {};
 };
 
 enum class ClientStatusCode
