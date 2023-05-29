@@ -2,6 +2,7 @@
 
 #ifdef CAM_PLATFORM_WINDOWS
 
+#include <iostream>
 #include <assert.h>
 #include <WS2tcpip.h>
 
@@ -96,7 +97,13 @@ namespace Core
 		si.sin_addr.s_addr = addr.Host;
 		si.sin_port = (uint16)addr.Port;
 
-		return sendto(m_Socket, (CHAR const *)src, src_bytes, 0, (SOCKADDR *)&si, sizeof(si));
+		int32 result = sendto(m_Socket, (CHAR const *)src, src_bytes, 0, (SOCKADDR *)&si, sizeof(si));
+		if (result == SOCKET_ERROR)
+		{
+			std::cerr << "Socket error" << std::endl;
+		}
+
+		return result;
 	}
 	
 	bool WindowsSocket::SetNonBlocking(bool enabled)

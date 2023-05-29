@@ -36,6 +36,12 @@ namespace Core
 		virtual bool SetCurrentWorkingDirectory(const std::string &directory) override;
 		virtual bool GetCurrentWorkingDirectory(std::string *out_directory) override;
 
+		virtual bool DirectoryExists(const std::string &filePath) const override;
+		virtual bool FileExists(const std::string &filePath) const override;
+
+		virtual bool RemoveFile(const std::string &filePath) const override;
+		virtual bool RemoveDirectoy(const std::string &filePath) const override;
+
 	private:
 
 		HANDLE m_Handle;

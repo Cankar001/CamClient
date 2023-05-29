@@ -20,6 +20,7 @@ workspace "CamVision"
 
 	group "Dependencies"
 		include "CamClient/vendor/opencv"
+		include "vendor/miniz"
 	group ""
 
 	group "Core"

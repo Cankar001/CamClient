@@ -32,11 +32,13 @@ namespace Core
 		m_Crypto = nullptr;
 		m_IPTable = nullptr;
 		m_Num = 0;
+		Reset();
 	}
 
 	Clients::Clients(Crypto *crypto, IPTable *iptable)
 		: m_Crypto(crypto), m_IPTable(iptable), m_Num(0)
 	{
+		Reset();
 	}
 	
 	void Clients::Reset()
@@ -47,8 +49,8 @@ namespace Core
 	
 	Clients::Node *Clients::Insert(addr_t addr, int64 now_ms)
 	{
-		auto slot = Core::Mix64(addr.Value) % utils::Count(m_Table);
-		auto node = m_Table[slot];
+		uint64 slot = Core::Mix64(addr.Value) % utils::Count(m_Table);
+		Node *node = m_Table[slot];
 
 		while (node)
 		{

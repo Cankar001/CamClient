@@ -10,7 +10,7 @@ namespace Core
 
 		struct key_t
 		{
-			uint64 Size = 0;
+			uint32 Size = 0;
 			Byte Data[4096];
 		};
 

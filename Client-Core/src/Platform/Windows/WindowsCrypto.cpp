@@ -2,6 +2,7 @@
 
 #ifdef CAM_PLATFORM_WINDOWS
 
+#include <iostream>
 #include <assert.h>
 
 namespace Core
@@ -30,26 +31,40 @@ namespace Core
 
 		if (m_HProv == 0)
 		{
+			std::cerr << "crypto not initialized" << std::endl;
 			return false;
 		}
 
 		HCRYPTKEY key;
 		if (!CryptGenKey(m_HProv, AT_KEYEXCHANGE, (4096 << 16) | CRYPT_ARCHIVABLE | CRYPT_EXPORTABLE, &key))
 		{
+			std::cerr << "CryptGenKey() failed." << std::endl;
 			return false;
 		}
 
 		BOOL result = TRUE;
-		DWORD public_size = (DWORD)pub->Size;
-		DWORD private_size = (DWORD)pri->Size;
 
 		pub->Size = sizeof(pub->Data);
-		result &= CryptExportKey(key, 0, PUBLICKEYBLOB, 0, pub->Data, &public_size);
+		DWORD public_size = (DWORD)pub->Size;
+		if (!CryptExportKey(key, 0, PUBLICKEYBLOB, 0, pub->Data, &public_size))
+		{
+			std::cerr << "Could not export public key! Error code: " << GetLastError() << std::endl;
+			return FALSE;
+		}
 
 		pri->Size = sizeof(pri->Data);
-		result &= CryptExportKey(key, 0, PRIVATEKEYBLOB, 0, pri->Data, &private_size);
+		DWORD private_size = (DWORD)pri->Size;
+		if (!CryptExportKey(key, 0, PRIVATEKEYBLOB, 0, pri->Data, &private_size))
+		{
+			std::cerr << "Could not export private key! Error code: " << GetLastError() << std::endl;
+			return FALSE;
+		}
 
-		CryptDestroyKey(key);
+		if (!CryptDestroyKey(key))
+		{
+			std::cerr << "Could not destroy the key!" << std::endl;
+			return FALSE;
+		}
 
 		return result;
 	}

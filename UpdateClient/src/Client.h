@@ -107,8 +107,8 @@ private:
 	uint32 m_LocalVersion;
 	uint32 m_ServerVersion;
 	ClientStatus m_Status;
-	bool m_IsFinished;
-	bool m_IsUpdating;
+	bool m_IsFinished = true;
+	bool m_IsUpdating = false;
 	uint32 m_UpdateIdx;
 	Signature m_UpdateSignature;
 };

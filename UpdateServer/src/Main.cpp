@@ -15,12 +15,24 @@ int main(int argc, char *argv[])
 	config.ServerIP = "127.0.0.1";
 	config.ServerPort = 44200;
 	config.TargetUpdatePath = "../CamClient";
-	config.TargetBinaryPath = "../CamClient/bin";
+	config.TargetBinaryPath = "../CamClient/bin/Debug-windows-x86_64/CamClient";
+	config.PublicKeyPath = "../CamClient/public_key.key";
+	config.PrivateKeyPath = "../CamClient/private_key.key";
+	config.SignaturePath = "../CamClient/signature.sig";
 
 	Server *s = new Server(config);
-	s->Run();
-	delete s;
+	if (!s->LoadUpdateFile())
+	{
+		std::cerr << "Could not load the update!" << std::endl;
 
+		delete s;
+		delete sys;
+		return -1;
+	}
+
+	s->Run();
+
+	delete s;
 	delete sys;
 	return 0;
 }

@@ -79,6 +79,26 @@ namespace Core
 	{
 		return false;
 	}
+
+	bool LinuxFileSystem::DirectoryExists(const std::string &filePath) const
+	{
+		return false;
+	}
+	
+	bool LinuxFileSystem::FileExists(const std::string &filePath) const
+	{
+		return false;
+	}
+	
+	bool LinuxFileSystem::RemoveFile(const std::string &filePath) const
+	{
+		return false;
+	}
+	
+	bool LinuxFileSystem::RemoveDirectoy(const std::string &filePath) const
+	{
+		return false;
+	}
 }
 
 #endif // CAM_PLATFORM_LINUX

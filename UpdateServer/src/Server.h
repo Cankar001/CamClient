@@ -26,6 +26,21 @@ struct ServerConfig
 	/// The port of the server
 	/// </summary>
 	uint16 ServerPort;
+
+	/// <summary>
+	/// the path to the public key
+	/// </summary>
+	std::string PublicKeyPath;
+
+	/// <summary>
+	/// The path to the private key
+	/// </summary>
+	std::string PrivateKeyPath;
+
+	/// <summary>
+	/// The path to the signature
+	/// </summary>
+	std::string SignaturePath;
 };
 
 class Server
@@ -35,7 +50,21 @@ public:
 	Server(const ServerConfig &config);
 	~Server();
 
+	/// <summary>
+	/// Runs the server.
+	/// </summary>
 	void Run();
+
+	/// <summary>
+	/// Loads up the directory and assembles the update.
+	/// </summary>
+	/// <returns>Returns true, if the update was built successfully and if the server is ready to run.</returns>
+	bool LoadUpdateFile();
+
+	/// <summary>
+	/// Watches the update path and automatically sends the new update to all clients
+	/// </summary>
+	void StartFileWatcher();
 
 private:
 
@@ -49,9 +78,6 @@ private:
 	Core::Crypto *m_Crypto = nullptr;
 	Core::IPTable *m_IPTable = nullptr;
 	Core::Clients *m_Clients = nullptr;
-
-	// Refreshes the update data if needed.
-	bool UpdateRefresh(int64 now_ms);
 
 	// Update data.
 	int64 m_LastUpdateCheckMS;

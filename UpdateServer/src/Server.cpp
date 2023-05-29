@@ -1,6 +1,9 @@
 #include "Server.h"
 
 #include <iostream>
+#include <filesystem>
+
+#include <miniz/miniz.h>
 
 #include "Utils/Utils.h"
 
@@ -17,7 +20,8 @@ Server::Server(const ServerConfig &config)
 	m_IPTable = new Core::IPTable();
 	m_Clients = new Core::Clients(m_Crypto, m_IPTable);
 
-	m_LocalVersion = Core::utils::GetLocalVersion(m_FileSystem, m_Config.TargetUpdatePath);
+	//m_LocalVersion = Core::utils::GetLocalVersion(m_FileSystem, m_Config.TargetUpdatePath);
+	m_LocalVersion = 101;
 	std::cout << "Current Server version: " << m_LocalVersion << std::endl;
 }
 
@@ -68,6 +72,138 @@ void Server::Run()
 	std::cerr << "error: socket creation failed." << std::endl;
 }
 
+bool Server::LoadUpdateFile()
+{
+	// First check, if the update path is valid
+	std::string update_path = m_Config.TargetBinaryPath;
+	std::string update_file = update_path + "/update.zip";
+
+	if (!m_FileSystem->DirectoryExists(update_path))
+	{
+		std::cerr << "Binary path from source does not exist! Please re-check your binary path or build the source first." << std::endl;
+		return false;
+	}
+
+	// then delete an existing update file
+	if (m_FileSystem->FileExists(update_file))
+	{
+		if (!m_FileSystem->RemoveFile(update_file))
+		{
+			std::cerr << "Could not delete the file " << update_file << std::endl;
+			return false;
+		}
+	}
+
+	// load the contents of the directory and store them into the zip file
+	for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(update_path))
+	{
+		const std::filesystem::path p = entry.path();
+		std::string zip_name = p.filename().string();
+	
+		// skip the archive itself
+		if (p.string().find("update") != std::string::npos)
+		{
+			continue;
+		}
+	
+		std::cout << "Adding " << zip_name.c_str() << "..." << std::endl;
+	
+		m_FileSystem->Open(p.string(), "r");
+		int64 file_size = m_FileSystem->Size();
+		Byte *data = new Byte[file_size];
+		m_FileSystem->Read(data, (uint32)file_size);
+		m_FileSystem->Close();
+	
+		mz_bool status = mz_zip_add_mem_to_archive_file_in_place(update_file.c_str(), zip_name.c_str(), data, file_size, nullptr, 0, MZ_BEST_COMPRESSION);
+		if (!status)
+		{
+			std::cerr << "Could not put " << zip_name.c_str() << " into " << update_file.c_str() << std::endl;
+			return false;
+		}
+	
+		delete[] data;
+		data = nullptr;
+	}
+
+	std::cout << "Added all files." << std::endl;
+
+	// Load the whole ZIP file into memory
+	m_FileSystem->Open(update_file, "r");
+	int64 update_file_size = m_FileSystem->Size();
+	m_UpdateFile.Alloc((uint32)update_file_size);
+	m_FileSystem->Read(m_UpdateFile.Data, (uint32)update_file_size);
+	m_FileSystem->Close();
+
+	Core::Crypto::key_t private_key, public_key;
+	if (m_FileSystem->FileExists(m_Config.PrivateKeyPath))
+	{
+		if (!m_FileSystem->ReadFile(m_Config.PublicKeyPath, public_key.Data, &public_key.Size))
+		{
+			std::cerr << "Could not read the public key!" << std::endl;
+			return false;
+		}
+		
+		if (!m_FileSystem->ReadFile(m_Config.PrivateKeyPath, private_key.Data, &private_key.Size))
+		{
+			std::cerr << "Could not read the private key!" << std::endl;
+			return false;
+		}
+	}
+	else
+	{
+		// First get the size needed for the keys and store them in the public_key and private_key variable
+		m_Crypto->GenKeys(&public_key, &private_key);
+
+		// then generate again
+		if (!m_Crypto->GenKeys(&public_key, &private_key))
+		{
+			std::cerr << "Could not generate public/private key pair!" << std::endl;
+			return false;
+		}
+	}
+
+	// make the signature for the file
+	if (!m_Crypto->SignSignature(m_UpdateSignature.Data, sizeof(m_UpdateSignature.Data), m_UpdateFile.Data, m_UpdateFile.Size, private_key.Data, private_key.Size))
+	{
+		std::cerr << "Could not sign the update!" << std::endl;
+		return false;
+	}
+
+	if (m_FileSystem->FileExists(m_Config.SignaturePath))
+	{
+		if (!m_FileSystem->RemoveFile(m_Config.SignaturePath))
+		{
+			std::cerr << "Could not delete the old signature file!" << std::endl;
+			return false;
+		}
+	}
+
+	// Now write the security files
+	if (!m_FileSystem->WriteFile(m_Config.PrivateKeyPath, private_key.Data, private_key.Size))
+	{
+		std::cerr << "Could not write private key file!" << std::endl;
+		return false;
+	}
+
+	if (!m_FileSystem->WriteFile(m_Config.PublicKeyPath, public_key.Data, public_key.Size))
+	{
+		std::cerr << "Could not write public key file!" << std::endl;
+		return false;
+	}
+
+	if (!m_FileSystem->WriteFile(m_Config.SignaturePath, m_UpdateSignature.Data, SIG_BYTES))
+	{
+		std::cerr << "Could not write the new signature!" << std::endl;
+		return false;
+	}
+
+	return true;
+}
+
+void Server::StartFileWatcher()
+{
+}
+
 bool Server::Step()
 {
 	static Byte BUF[65536];
@@ -84,13 +220,7 @@ bool Server::Step()
 		return true;
 	}
 
-	auto header = (header_t *)BUF;
-	if (header->Version != m_LocalVersion)
-	{
-		std::cerr << "Header version does not match the server version!" << std::endl;
-		return true;
-	}
-
+	header_t *header = (header_t *)BUF;
 	if (header->Type == MessageType::CLIENT_UPDATE_BEGIN)
 	{
 		if (len != sizeof(ClientUpdateBeginMessage))
@@ -99,22 +229,26 @@ bool Server::Step()
 		}
 
 		ClientUpdateBeginMessage *msg = (ClientUpdateBeginMessage *)BUF;
+		std::cout << "Received Update begin request with client token: " << msg->ClientToken << std::endl;
 
 		int64 now_ms = Core::QueryMS();
 		auto client = m_Clients->Insert(addr, now_ms);
 
 		if (!client)
 		{
+			std::cerr << "Client could not be inserted!" << std::endl;
 			return true;
 		}
 
 		if (!client->IsBandwidthAvailable(now_ms))
 		{
+			std::cerr << "Client has no bandwidth available!" << std::endl;
 			return true;
 		}
 
 		if (msg->ServerToken != client->ServerToken)
 		{
+			std::cerr << "Server tokens did not match! Sending Server update token message..." << std::endl;
 			ServerUpdateTokenMessage res = {};
 			res.Header.Type = MessageType::SERVER_UPDATE_TOKEN;
 			res.Header.Version = m_LocalVersion;
@@ -127,16 +261,7 @@ bool Server::Step()
 			return true;
 		}
 
-		if (!UpdateRefresh(now_ms))
-		{
-			return true;
-		}
-
-		if (msg->ClientVersion == m_LocalVersion)
-		{
-			return true;
-		}
-
+		std::cout << "Sending update begin response..." << std::endl;
 		ServerUpdateBeginMessage res;
 		memset(&res, 0, sizeof(res));
 
@@ -160,12 +285,8 @@ bool Server::Step()
 
 		int64 now_ms = Core::QueryMS();
 
-		if (!UpdateRefresh(now_ms))
-		{
-			return true;
-		}
-
 		ClientUpdatePieceMessage *msg = (ClientUpdatePieceMessage *)BUF;
+		std::cout << "Received update piece request for update position: " << msg->PiecePos << std::endl;
 
 		if (msg->ServerVersion != m_LocalVersion)
 		{
@@ -194,6 +315,7 @@ bool Server::Step()
 			return true;
 		}
 
+		std::cout << "Sending update piece response..." << std::endl;
 		ServerUpdatePieceMessage res = {};
 		res.Header.Version = m_LocalVersion;
 		res.Header.Type = MessageType::SERVER_UPDATE_PIECE;
@@ -221,7 +343,9 @@ bool Server::Step()
 
 		ClientWantsVersionMessage *msg = (ClientWantsVersionMessage *)BUF;
 		uint32 client_version = msg->LocalVersion;
-		
+		std::cout << "Received server version request for version: " << msg->LocalVersion << std::endl;
+
+		std::cout << "Sending server version response with version: " << m_LocalVersion << std::endl;
 		ServerVersionInfoMessage res = {};
 		res.Header.Type = MessageType::SERVER_RECEIVE_VERSION;
 		res.Header.Version = m_LocalVersion;
@@ -230,34 +354,5 @@ bool Server::Step()
 	}
 
 	return true;
-}
-
-bool Server::UpdateRefresh(int64 now_ms)
-{
-	if (now_ms - m_LastUpdateCheckMS > 15000)
-	{
-		m_LastUpdateCheckMS = now_ms;
-
-		/*
-		int64 file_time_ms = Core::FileSystem::GetWriteMS(update_sig_path);
-		if (file_time_ms != m_LastUpdateWriteMS)
-		{
-			m_LastUpdateWriteMS = file_time_ms;
-
-			m_UpdateFile.Free();
-			if (filesystem::read(&m_UpdateFile, m_Config.TargetUpdatePath + "/update.zip"))
-			{
-				m_UpdateVersion = Core::Crc32(m_UpdateFile.Data, m_UpdateFile.Size);
-			}
-
-			if (filesystem::file_t file; file.open(GENERIC_READ, OPEN_EXISTING, update_sig_path))
-			{
-				file.read(&update_sig, sizeof(update_sig));
-			}
-		}
-	*/
-	}
-
-	return (m_UpdateFile.Data != nullptr);
 }
 

@@ -32,6 +32,12 @@ namespace Core
 		virtual bool SetCurrentWorkingDirectory(const std::string &directory) = 0;
 		virtual bool GetCurrentWorkingDirectory(std::string *out_directory) = 0;
 
+		virtual bool DirectoryExists(const std::string &filePath) const = 0;
+		virtual bool FileExists(const std::string &filePath) const = 0;
+		
+		virtual bool RemoveFile(const std::string &filePath) const = 0;
+		virtual bool RemoveDirectoy(const std::string &filePath) const = 0;
+
 		static FileSystem *Create();
 	};
 
@@ -48,6 +54,12 @@ namespace Core
 		inline ~FileSystemBuffer()
 		{
 			Free();
+		}
+
+		void Alloc(uint32 size)
+		{
+			Data = new Byte[size];
+			Size = size;
 		}
 
 		inline void Free()

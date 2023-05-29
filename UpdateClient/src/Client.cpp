@@ -1,6 +1,7 @@
 #include "Client.h"
 
 #include <iostream>
+#include <assert.h>
 
 #include "Utils/Utils.h"
 
@@ -51,12 +52,15 @@ void Client::RequestServerVersion()
 	m_LocalVersion = local_version;
 
 	// Then request the latest client version from the server
+	std::cout << "Sending server version request..." << std::endl;
 	ClientWantsVersionMessage message = {};
 	message.LocalVersion = local_version;
 	message.ClientVersion = 0;
 	message.Header.Type = MessageType::CLIENT_REQUEST_VERSION;
 	message.Header.Version = local_version;
-	m_Socket->Send(&message, sizeof(message), m_Host);
+	uint32 bytes_sent = m_Socket->Send(&message, sizeof(message), m_Host);
+	assert(bytes_sent == sizeof(message));
+
 	m_Status.Code = ClientStatusCode::NONE;
 }
 
@@ -125,22 +129,27 @@ void Client::MessageLoop()
 			}
 
 			ServerVersionInfoMessage *msg = (ServerVersionInfoMessage *)BUF;
+			std::cout << "Received new server version: " << msg->Version << std::endl;
 			if (msg->Version != m_LocalVersion)
 			{
 				// The versions are different, we need an update
 				m_Status.Code = ClientStatusCode::NEEDS_UPDATE;
 				m_ClientVersion = msg->Version;
+				m_IsFinished = false; // reset the update state, so that in the next update the update will start
+				std::cout << "Requiring update..." << std::endl;
 			}
 			else
 			{
 				// The versions are the same, we have the latest version
 				m_Status.Code = ClientStatusCode::UP_TO_DATE;
+				std::cout << "binaries are up-to-date. No action required." << std::endl;
 			}
 		}
 		else if (header->Type == MessageType::SERVER_UPDATE_BEGIN)
 		{
 			if (len != sizeof(ServerUpdateBeginMessage))
 			{
+				std::cerr << "received wrong package size" << std::endl;
 				return;
 			}
 
@@ -149,23 +158,27 @@ void Client::MessageLoop()
 			// Verify that the update size is reasonable (<100MB).
 			if (msg->UpdateSize == 0 || msg->UpdateSize >= 100000000)
 			{
+				std::cerr << "Update size was very unrealistic!" << std::endl;
 				return;
 			}
 
 			// Allocate space for update data.
 			if (!m_UpdateData.Alloc(msg->UpdateSize))
 			{
+				std::cerr << "Could not allocated enough space for update!" << std::endl;
 				return;
 			}
 
 			// Allocate space for the piece tracker table.
 			if (!m_UpdatePieces.Alloc((msg->UpdateSize + PIECE_BYTES - 1) / PIECE_BYTES))
 			{
+				std::cerr << "Could not allocated enough space for update!" << std::endl;
 				return;
 			}
 
 			m_ServerVersion = msg->ServerVersion;
 			memcpy(&m_UpdateSignature, &msg->UpdateSignature, sizeof(Signature));
+			std::cout << "Received update begin request, total size: " << msg->UpdateSize << std::endl;
 
 			m_Status.Bytes = 0;
 			m_Status.Total = m_UpdateData.Size;
@@ -261,6 +274,7 @@ void Client::MessageLoop()
 				return;
 			}
 
+			std::cout << "Received new server token: " << msg->ServerToken << std::endl;
 			m_ServerToken = msg->ServerToken;
 		}
 	}
@@ -271,7 +285,7 @@ void Client::Reset()
 	m_UpdateData.Free();
 	m_UpdatePieces.Free();
 
-	m_IsFinished = false;
+	m_IsFinished = true;
 	m_IsUpdating = false;
 
 	m_ClientToken = 0;
@@ -296,6 +310,7 @@ void Client::UpdateProgress(int64 now_ms, Core::addr_t addr)
 			m_ClientToken = m_Crypto->GenToken();
 
 			// Send update begin request to server
+			std::cout << "Sending update begin request..." << std::endl;
 			ClientUpdateBeginMessage begin_update = {};
 			begin_update.Header.Type = MessageType::CLIENT_UPDATE_BEGIN;
 			begin_update.Header.Version = m_ClientVersion;

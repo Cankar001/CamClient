@@ -138,6 +138,11 @@ namespace Core
 
 	bool WindowsFileSystem::ReadFile(const std::string &filePath, void *dst, uint32 *outSize)
 	{
+		if (!dst || !outSize)
+		{
+			return false;
+		}
+
 		HANDLE file_handle = CreateFileA(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
 		uint32 size = (uint32)utils::GetFileSizeInternal(file_handle);
 
@@ -148,10 +153,10 @@ namespace Core
 		if (!result)
 			delete[] buffer;
 
-		if (outSize)
-			*outSize = size;
+		dst = buffer;
+		*outSize = size;
 
-		return result ? buffer : nullptr;
+		return result;
 	}
 	
 	uint32 WindowsFileSystem::Print(const char *fmt, ...)
@@ -209,6 +214,33 @@ namespace Core
 		buffer[dwRet] = '\0';
 		*out_directory = std::string(buffer);
 		return true;
+	}
+	bool WindowsFileSystem::DirectoryExists(const std::string &filePath) const
+	{
+		if (filePath.empty())
+			return false;
+
+		DWORD result = GetFileAttributesA(filePath.c_str());
+		return (result != INVALID_FILE_ATTRIBUTES && (result & FILE_ATTRIBUTE_DIRECTORY));
+	}
+
+	bool WindowsFileSystem::FileExists(const std::string &filePath) const
+	{
+		if (filePath.empty())
+			return false;
+
+		DWORD result = GetFileAttributesA(filePath.c_str());
+		return !(result == INVALID_FILE_ATTRIBUTES && GetLastError() == ERROR_FILE_NOT_FOUND);
+	}
+	
+	bool WindowsFileSystem::RemoveFile(const std::string &filePath) const
+	{
+		return ::DeleteFileA(filePath.c_str());
+	}
+	
+	bool WindowsFileSystem::RemoveDirectoy(const std::string &filePath) const
+	{
+		return RemoveDirectoryA(filePath.c_str());
 	}
 }
 

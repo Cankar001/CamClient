@@ -11,7 +11,8 @@ project "UpdateClient"
 
 	dependson
 	{
-		"Client-Core"
+		"Client-Core",
+		"Miniz"
 	}
 
     files
@@ -23,7 +24,8 @@ project "UpdateClient"
     includedirs
     {
 		"src",
-		"%{IncludeDir.cam_core}"
+		"%{IncludeDir.cam_core}",
+		"%{IncludeDir.miniz}"
     }
 	
 	postbuildcommands
@@ -33,7 +35,8 @@ project "UpdateClient"
 	
 	links
 	{
-		"Client-Core"
+		"Client-Core",
+		"Miniz"
 	}
 
     filter "system:windows"

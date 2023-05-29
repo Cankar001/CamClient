@@ -35,7 +35,6 @@ namespace Core
 
 		// Initializes the clients table.
 		Clients();
-
 		Clients(Crypto *crypto, IPTable *iptable);
 
 		// Resets the clients table.
