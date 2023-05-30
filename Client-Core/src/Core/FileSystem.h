@@ -17,7 +17,7 @@ namespace Core
 		bool WriteTextFile(const std::string &filePath, const std::string &str);
 
 		bool WriteFile(const std::string &filePath, void *src, uint32 bytes);
-		bool ReadFile(const std::string &filePath, void *dst, uint32 *outSize);
+		Byte *ReadFile(const std::string &filePath, uint32 *outSize);
 
 		uint32 Print(const std::string &filePath, const char *fmt, ...);
 

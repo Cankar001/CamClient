@@ -29,9 +29,9 @@ namespace Core
 		return false;
 	}
 
-	bool FileSystem::ReadFile(const std::string &filePath, void *dst, uint32 *outSize)
+	Byte *FileSystem::ReadFile(const std::string &filePath, uint32 *outSize)
 	{
-		return false;
+		return nullptr;
 	}
 
 	uint32 FileSystem::Print(const std::string &filePath, const char *fmt, ...)

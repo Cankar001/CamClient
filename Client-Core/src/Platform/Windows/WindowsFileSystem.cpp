@@ -116,9 +116,9 @@ namespace Core
 		return result;
 	}
 
-	bool FileSystem::ReadFile(const std::string &filePath, void *dst, uint32 *outSize)
+	Byte *FileSystem::ReadFile(const std::string &filePath, uint32 *outSize)
 	{
-		if (!dst || !outSize)
+		if (!outSize)
 		{
 			return false;
 		}
@@ -127,16 +127,21 @@ namespace Core
 		uint32 size = (uint32)utils::GetFileSizeInternal(file_handle);
 
 		Byte *buffer = new Byte[size];
+		memset(buffer, 0, size);
+
 		bool result = utils::ReadFileInternal(file_handle, buffer, size);
 		CloseHandle(file_handle);
 
 		if (!result)
+		{
 			delete[] buffer;
+			buffer = nullptr;
+			return nullptr;
+		}
 
-		dst = buffer;
 		*outSize = size;
 
-		return result;
+		return buffer;
 	}
 	
 	uint32 FileSystem::Print(const std::string &filePath, const char *fmt, ...)

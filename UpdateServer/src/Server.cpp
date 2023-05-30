@@ -98,6 +98,7 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature)
 	{
 		const std::filesystem::path p = entry.path();
 		std::string zip_name = p.filename().string();
+		std::string current_file_name = p.string();
 	
 		// skip the archive itself
 		if (p.string().find("update") != std::string::npos)
@@ -107,11 +108,11 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature)
 	
 		std::cout << "Adding " << zip_name.c_str() << "..." << std::endl;
 	
-		uint32 file_size = (uint32)Core::FileSystem::Get()->Size(p.string());
-		Byte *data = new Byte[file_size];
-		if (!Core::FileSystem::Get()->ReadFile(p.string(), data, &file_size))
+		uint32 file_size = 0;
+		Byte *data = Core::FileSystem::Get()->ReadFile(current_file_name, &file_size);
+		if (!data)
 		{
-			std::cerr << "Could not read file " << p.string() << "!" << std::endl;
+			std::cerr << "Could not read file " << current_file_name << "!" << std::endl;
 			return false;
 		}
 	
@@ -129,10 +130,11 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature)
 	std::cout << "Added all files." << std::endl;
 
 	// Load the whole ZIP file into memory
-	uint32 update_file_size = (uint32)Core::FileSystem::Get()->Size(update_file);
-	m_UpdateFile.Alloc(update_file_size);
-
-	if (!Core::FileSystem::Get()->ReadFile(update_file, m_UpdateFile.Data, &update_file_size))
+	uint32 update_file_size = 0;
+	m_UpdateFile.Data = Core::FileSystem::Get()->ReadFile(update_file, &update_file_size);
+	m_UpdateFile.Size = update_file_size;
+	
+	if (!m_UpdateFile.Data)
 	{
 		std::cerr << "Could not read back in the update file!" << std::endl;
 		return false;
@@ -171,13 +173,21 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature)
 	Core::Crypto::key_t private_key, public_key;
 	if (Core::FileSystem::Get()->FileExists(m_Config.PrivateKeyPath))
 	{
-		if (!Core::FileSystem::Get()->ReadFile(m_Config.PublicKeyPath, public_key.Data, &public_key.Size))
+		Byte *public_key_data = Core::FileSystem::Get()->ReadFile(m_Config.PublicKeyPath, &public_key.Size);
+		memcpy(public_key.Data, public_key_data, public_key.Size);
+		delete[] public_key_data;
+
+		if (!public_key.Data)
 		{
 			std::cerr << "Could not read the public key!" << std::endl;
 			return false;
 		}
 		
-		if (!Core::FileSystem::Get()->ReadFile(m_Config.PrivateKeyPath, private_key.Data, &private_key.Size))
+		Byte *private_key_data = Core::FileSystem::Get()->ReadFile(m_Config.PrivateKeyPath, &private_key.Size);
+		memcpy(private_key.Data, private_key_data, private_key.Size);
+		delete[] private_key_data;
+
+		if (!private_key.Data)
 		{
 			std::cerr << "Could not read the private key!" << std::endl;
 			return false;
