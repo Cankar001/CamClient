@@ -1,4 +1,4 @@
-project "Client-Core"
+project "Cam-Core"
     kind "StaticLib"
     language "C++"
 	cppdialect "C++17"

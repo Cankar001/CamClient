@@ -7,7 +7,7 @@ project "CamDisplay"
 	
 	dependson
 	{
-		"Client-Core"
+		"Cam-Core"
 	}
 
     targetdir ("bin/" .. outputdir .. "/%{prj.name}")
@@ -29,13 +29,11 @@ project "CamDisplay"
 
     links
     {
-        "Client-Core"
+        "Cam-Core"
     }
 	
 	postbuildcommands
-	{
-		--("{COPY} %{wks.location}Client-Core/bin/" .. outputdir .. "/Client-Core/Client-Core.dll %{cfg.targetdir}"),
-	
+	{	
 		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_world455d.dll %{cfg.targetdir}"),
 		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_text455d.dll %{cfg.targetdir}"),
 		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_tracking455d.dll %{cfg.targetdir}"),

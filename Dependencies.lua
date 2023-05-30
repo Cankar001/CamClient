@@ -2,7 +2,7 @@ miniz_include_path = path.getabsolute('vendor/miniz/include')
 
 IncludeDir = {}
 IncludeDir["opencv"]             = "%{wks.location}/CamClient/vendor/opencv/include/"
-IncludeDir["cam_core"]           = "%{wks.location}/Client-Core/src"
+IncludeDir["cam_core"]           = "%{wks.location}/Cam-Core/src"
 IncludeDir["miniz"]        		 = miniz_include_path
 
 LibDir = {}

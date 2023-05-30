@@ -11,7 +11,7 @@ project "UpdateServer"
 
 	dependson
 	{
-		"Client-Core",
+		"Cam-Core",
 		"Miniz"
 	}
 
@@ -30,12 +30,11 @@ project "UpdateServer"
 	
 	postbuildcommands
 	{
-		--("{COPY} %{wks.location}Client-Core/bin/" .. outputdir .. "/Client-Core/Client-Core.dll %{cfg.targetdir}"),
 	}
 	
 	links
 	{
-		"Client-Core",
+		"Cam-Core",
 		"Miniz"
 	}
 

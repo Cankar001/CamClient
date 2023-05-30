@@ -24,7 +24,7 @@ workspace "CamVision"
 	group ""
 
 	group "Core"
-		include "Client-Core"
+		include "Cam-Core"
 	group ""
 
 	group "Cam"
