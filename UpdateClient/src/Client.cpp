@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <assert.h>
+#include <miniz/miniz.h>
 
 #include "Utils/Utils.h"
 
@@ -69,10 +70,17 @@ void Client::Run()
 	{
 		if (m_Status.Code == ClientStatusCode::UP_TO_DATE)
 		{
-			// TODO: start CamClient application
-			std::cout << "Starting CamClient..." << std::endl;
+			if (ExtractUpdate(m_Config.UpdateBinaryPath + "/update.zip"))
+			{
+				// TODO: start CamClient application
+				std::cout << "Starting CamClient..." << std::endl;
 
-			m_Status.Code = ClientStatusCode::NONE;
+				m_Status.Code = ClientStatusCode::NONE;
+			}
+			else
+			{
+				std::cerr << "Could not extract the archive!" << std::endl;
+			}
 		}
 		else if (m_Status.Code == ClientStatusCode::BAD_CRC)
 		{
@@ -293,6 +301,64 @@ void Client::MessageLoop()
 			m_ServerToken = msg->ServerToken;
 		}
 	}
+}
+
+bool Client::ExtractUpdate(const std::string &zipPath)
+{
+	mz_zip_archive zip_archive;
+
+	std::cout << "Extracting archive " << zipPath.c_str() << "..." << std::endl;
+
+	mz_bool status = mz_zip_reader_init_file(&zip_archive, zipPath.c_str(), 0);
+	if (!status)
+	{
+		std::cerr << "Could not open the ZIP file!" << std::endl;
+		return false;
+	}
+
+	for (uint32 i = 0; i < mz_zip_reader_get_num_files(&zip_archive); ++i)
+	{
+		mz_zip_archive_file_stat file_stat;
+		if (!mz_zip_reader_file_stat(&zip_archive, i, &file_stat))
+		{
+			std::cerr << "Could not make the file stats" << std::endl;
+
+			if (!mz_zip_reader_end(&zip_archive))
+			{
+				std::cerr << "Could not close the zip reader" << std::endl;
+			}
+
+			return false;
+		}
+
+		std::string file_name = file_stat.m_filename;
+		std::string file_name_on_disk = m_Config.UpdateBinaryPath + "/" + file_name;
+		std::string comment = file_stat.m_comment;
+		uint64 uncompressed_size = file_stat.m_uncomp_size;
+		uint64 compressed_size = file_stat.m_comp_size;
+		mz_bool is_dir = mz_zip_reader_is_file_a_directory(&zip_archive, i);
+		std::cout << "Extracting file " << file_name.c_str() << std::endl;
+
+		Byte *p = (Byte*)mz_zip_reader_extract_file_to_heap(&zip_archive, file_name.c_str(), &uncompressed_size, 0);
+
+		if (!Core::FileSystem::Get()->WriteFile(file_name_on_disk, p, (uint32)uncompressed_size))
+		{
+			std::cerr << "Could not write the file " << file_name_on_disk.c_str() << std::endl;
+			return false;
+		}
+
+		delete[] p;
+		p = nullptr;
+	}
+
+	if (!mz_zip_reader_end(&zip_archive))
+	{
+		std::cerr << "Could not close the zip reader" << std::endl;
+		return false;
+	}
+
+	std::cout << "Archive " << zipPath.c_str() << " extracted." << std::endl;
+	return true;
 }
 
 void Client::Reset()

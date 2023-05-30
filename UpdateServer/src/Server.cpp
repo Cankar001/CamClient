@@ -20,7 +20,7 @@ Server::Server(const ServerConfig &config)
 	m_IPTable = new Core::IPTable();
 	m_Clients = new Core::Clients(m_Crypto, m_IPTable);
 
-	//m_LocalVersion = Core::utils::GetLocalVersion(m_FileSystem, m_Config.TargetUpdatePath);
+	//m_LocalVersion = Core::utils::GetLocalVersion(m_Config.TargetUpdatePath);
 	m_LocalVersion = 101;
 	std::cout << "Current Server version: " << m_LocalVersion << std::endl;
 }

@@ -90,6 +90,7 @@ public:
 private:
 
 	void MessageLoop();
+	bool ExtractUpdate(const std::string &zipPath);
 
 private:
 
