@@ -9,7 +9,6 @@ Client::Client(const ClientConfig &config)
 	: m_Config(config)
 {
 	m_Socket = Core::Socket::Create();
-	m_FileSystem = Core::FileSystem::Create();
 	m_Crypto = Core::Crypto::Create();
 
 	if (!m_Socket->Open())
@@ -31,9 +30,6 @@ Client::~Client()
 	delete m_Crypto;
 	m_Crypto = nullptr;
 
-	delete m_FileSystem;
-	m_FileSystem = nullptr;
-
 	delete m_Socket;
 	m_Socket = nullptr;
 }
@@ -41,7 +37,7 @@ Client::~Client()
 void Client::RequestServerVersion()
 {
 	// First load the local client version
-	uint32 local_version = Core::utils::GetLocalVersion(m_FileSystem, m_Config.UpdateTargetPath);
+	uint32 local_version = Core::utils::GetLocalVersion(m_Config.UpdateTargetPath);
 	if (!local_version)
 	{
 		std::cerr << "Could not retrieve the local version!" << std::endl;
@@ -353,7 +349,7 @@ void Client::UpdateProgress(int64 now_ms, Core::addr_t addr)
 	//	{
 		//	if (m_Crypto->TestSignature(m_UpdateSignature.Data, SIG_BYTES, m_UpdateData.Ptr, m_UpdateData.Size, m_Config.PublicKey.Data, m_Config.PublicKey.Size))
 		//	{
-				if (m_FileSystem->WriteFile(m_Config.UpdateBinaryPath + "/update.zip", m_UpdateData.Ptr, m_UpdateData.Size))
+				if (Core::FileSystem::Get()->WriteFile(m_Config.UpdateBinaryPath + "/update.zip", m_UpdateData.Ptr, m_UpdateData.Size))
 				{
 					m_IsFinished = true;
 					m_Status.Code = ClientStatusCode::UP_TO_DATE;

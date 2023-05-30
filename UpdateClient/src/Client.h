@@ -97,7 +97,6 @@ private:
 
 	ClientConfig m_Config;
 	Core::Socket *m_Socket = nullptr;
-	Core::FileSystem *m_FileSystem = nullptr;
 	Core::Crypto *m_Crypto = nullptr;
 	Core::addr_t m_Host;
 

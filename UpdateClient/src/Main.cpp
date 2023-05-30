@@ -17,10 +17,9 @@ int main(int argc, char *argv[])
 	// TODO: Remove update.zip, if it exists
 
 	// Set the current working directory
-	Core::FileSystem *sys = Core::FileSystem::Create();
 	std::string cwd = "";
-	sys->SetCurrentWorkingDirectory("../../../");
-	sys->GetCurrentWorkingDirectory(&cwd);
+	Core::FileSystem::Get()->SetCurrentWorkingDirectory("../../../");
+	Core::FileSystem::Get()->GetCurrentWorkingDirectory(&cwd);
 	std::cout << "Current CWD: " << cwd.c_str() << std::endl;
 
 	// Create the client
@@ -34,7 +33,6 @@ int main(int argc, char *argv[])
 	// Run the client
 	c.Run();
 
-	delete sys;
 	return 0;
 }
 

@@ -5,10 +5,9 @@
 int main(int argc, char *argv[])
 {
 	// Set the current working directory
-	Core::FileSystem *sys = Core::FileSystem::Create();
 	std::string cwd = "";
-	sys->SetCurrentWorkingDirectory("../../../");
-	sys->GetCurrentWorkingDirectory(&cwd);
+	Core::FileSystem::Get()->SetCurrentWorkingDirectory("../../../");
+	Core::FileSystem::Get()->GetCurrentWorkingDirectory(&cwd);
 	std::cout << "Current CWD: " << cwd.c_str() << std::endl;
 
 	ServerConfig config;
@@ -26,7 +25,6 @@ int main(int argc, char *argv[])
 		std::cerr << "Could not load the update!" << std::endl;
 
 		delete s;
-		delete sys;
 		return -1;
 	}
 
@@ -35,7 +33,6 @@ int main(int argc, char *argv[])
 	s->Run();
 
 	delete s;
-	delete sys;
 	return 0;
 }
 

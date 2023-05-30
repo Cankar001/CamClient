@@ -74,7 +74,6 @@ private:
 
 	ServerConfig m_Config;
 	Core::Socket *m_Socket = nullptr;
-	Core::FileSystem *m_FileSystem = nullptr;
 	Core::Crypto *m_Crypto = nullptr;
 	Core::IPTable *m_IPTable = nullptr;
 	Core::Clients *m_Clients = nullptr;

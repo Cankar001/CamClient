@@ -1,44 +1,34 @@
 #pragma once
 
 #include "Core.h"
+#include "Singleton.h"
 #include <string>
 
 namespace Core
 {
-	class FileSystem
+	class FileSystem : public Singleton<FileSystem>
 	{
 	public:
 
-		virtual ~FileSystem() {}
+		int64 Seek(const std::string &filePath, int64 offset, int64 origin);
+		int64 Size(const std::string &filePath);
 
-		virtual bool Open(const std::string &filePath, const std::string &writeMode) = 0;
-		virtual void Close() = 0;
+		uint32 ReadTextFile(const std::string &filePath, std::string *out_str);
+		bool WriteTextFile(const std::string &filePath, const std::string &str);
 
-		virtual bool IsValid() const = 0;
-		virtual int64 Seek(int64 offset, int64 origin) = 0;
-		virtual int64 Size() = 0;
+		bool WriteFile(const std::string &filePath, void *src, uint32 bytes);
+		bool ReadFile(const std::string &filePath, void *dst, uint32 *outSize);
 
-		virtual uint32 Read(void *dst, uint32 bytes) = 0;
-		virtual uint32 Write(void const *src, uint32 bytes) = 0;
+		uint32 Print(const std::string &filePath, const char *fmt, ...);
 
-		virtual uint32 ReadTextFile(std::string *out_str) = 0;
-		virtual bool WriteTextFile(const std::string &str) = 0;
+		bool SetCurrentWorkingDirectory(const std::string &directory);
+		bool GetCurrentWorkingDirectory(std::string *out_directory);
 
-		virtual bool WriteFile(const std::string &filePath, void *src, uint32 bytes) = 0;
-		virtual bool ReadFile(const std::string &filePath, void *dst, uint32 *outSize) = 0;
-
-		virtual uint32 Print(const char *fmt, ...) = 0;
-
-		virtual bool SetCurrentWorkingDirectory(const std::string &directory) = 0;
-		virtual bool GetCurrentWorkingDirectory(std::string *out_directory) = 0;
-
-		virtual bool DirectoryExists(const std::string &filePath) const = 0;
-		virtual bool FileExists(const std::string &filePath) const = 0;
+		bool DirectoryExists(const std::string &filePath) const;
+		bool FileExists(const std::string &filePath) const;
 		
-		virtual bool RemoveFile(const std::string &filePath) const = 0;
-		virtual bool RemoveDirectoy(const std::string &filePath) const = 0;
-
-		static FileSystem *Create();
+		bool RemoveFile(const std::string &filePath) const;
+		bool RemoveDirectoy(const std::string &filePath) const;
 	};
 
 	struct FileSystemBuffer

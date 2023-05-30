@@ -60,22 +60,17 @@ namespace Core::utils
 		return result;
 	}
 
-	static uint32 GetLocalVersion(FileSystem *filesystem, const std::string &rootPath)
+	static uint32 GetLocalVersion(const std::string &rootPath)
 	{
 		std::string local_path = rootPath + "/src/CamVersion.h";
-		if (!filesystem->Open(local_path, "r"))
-		{
-			return 0;
-		}
-
 		std::string version_content = "";
-		if (!filesystem->ReadTextFile(&version_content))
+
+		if (!FileSystem::Get()->ReadTextFile(local_path, &version_content))
 		{
 			return 0;
 		}
 
 		std::string local_version_str = utils::GetMacroFromText(version_content, "CAM_VERSION");
-		filesystem->Close();
 		return std::stoi(local_version_str);
 	}
 }

@@ -1,101 +1,70 @@
-#include "LinuxFileSystem.h"
+#include "Core/FileSystem.h"
 
 #ifdef CAM_PLATFORM_LINUX
 
 namespace Core
 {
-	LinuxFileSystem::LinuxFileSystem()
+	int64 FileSystem::Seek(const std::string &filePath, int64 offset, int64 origin)
 	{
+		return 0;
 	}
 
-	LinuxFileSystem::~LinuxFileSystem()
+	int64 FileSystem::Size(const std::string &filePath)
 	{
-	}
-	
-	bool LinuxFileSystem::Open(const std::string &filePath, const std::string &writeMode)
-	{
-		return false;
-	}
-	
-	void LinuxFileSystem::Close()
-	{
-	}
-	
-	bool LinuxFileSystem::IsValid() const
-	{
-		return false;
-	}
-	
-	int64 LinuxFileSystem::Seek(int64 offset, int64 origin)
-	{
-		return int64();
-	}
-	
-	int64 LinuxFileSystem::Size()
-	{
-		return int64();
-	}
-	
-	uint32 LinuxFileSystem::Read(void *dst, uint32 bytes)
-	{
-		return uint32();
-	}
-	
-	uint32 LinuxFileSystem::Write(void const *src, uint32 bytes)
-	{
-		return uint32();
+		return 0;
 	}
 
-	uint32 LinuxFileSystem::ReadTextFile(std::string *out_str)
+	uint32 FileSystem::ReadTextFile(const std::string &filePath, std::string *out_str)
 	{
-		return uint32();
+		return 0;
 	}
 
-	bool LinuxFileSystem::WriteTextFile(const std::string &str)
+	bool FileSystem::WriteTextFile(const std::string &filePath, const std::string &str)
 	{
 		return false;
 	}
 
-	bool LinuxFileSystem::WriteFile(const std::string &filePath, void *src, uint32 bytes)
+	bool FileSystem::WriteFile(const std::string &filePath, void *src, uint32 bytes)
 	{
 		return false;
 	}
 
-	bool LinuxFileSystem::ReadFile(const std::string &filePath, void *dst, uint32 *outSize)
-	{
-		return false;
-	}
-	
-	uint32 LinuxFileSystem::Print(const char *fmt, ...)
-	{
-		return uint32();
-	}
-
-	bool LinuxFileSystem::SetCurrentWorkingDirectory(const std::string &directory)
-	{
-	}
-
-	bool LinuxFileSystem::GetCurrentWorkingDirectory(std::string *out_directory)
+	bool FileSystem::ReadFile(const std::string &filePath, void *dst, uint32 *outSize)
 	{
 		return false;
 	}
 
-	bool LinuxFileSystem::DirectoryExists(const std::string &filePath) const
+	uint32 FileSystem::Print(const std::string &filePath, const char *fmt, ...)
+	{
+		return 0;
+	}
+
+	bool FileSystem::SetCurrentWorkingDirectory(const std::string &directory)
 	{
 		return false;
 	}
-	
-	bool LinuxFileSystem::FileExists(const std::string &filePath) const
+
+	bool FileSystem::GetCurrentWorkingDirectory(std::string *out_directory)
 	{
 		return false;
 	}
-	
-	bool LinuxFileSystem::RemoveFile(const std::string &filePath) const
+
+	bool FileSystem::DirectoryExists(const std::string &filePath) const
 	{
 		return false;
 	}
-	
-	bool LinuxFileSystem::RemoveDirectoy(const std::string &filePath) const
+
+	bool FileSystem::FileExists(const std::string &filePath) const
+	{
+		return false;
+	}
+
+	bool FileSystem::RemoveFile(const std::string &filePath) const
+	{
+		return false;
+	}
+
+	bool FileSystem::RemoveDirectoy(const std::string &filePath) const
 	{
 		return false;
 	}

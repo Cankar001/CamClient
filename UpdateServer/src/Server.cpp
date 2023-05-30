@@ -17,7 +17,6 @@ Server::Server(const ServerConfig &config)
 
 	m_Socket = Core::Socket::Create();
 	m_Crypto = Core::Crypto::Create();
-	m_FileSystem = Core::FileSystem::Create();
 	m_IPTable = new Core::IPTable();
 	m_Clients = new Core::Clients(m_Crypto, m_IPTable);
 
@@ -35,9 +34,6 @@ Server::~Server()
 
 	delete m_IPTable;
 	m_IPTable = nullptr;
-
-	delete m_FileSystem;
-	m_FileSystem = nullptr;
 
 	delete m_Crypto;
 	m_Crypto = nullptr;
@@ -81,17 +77,16 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature)
 	std::string update_path = m_Config.TargetBinaryPath;
 	std::string update_file = update_path + "/update.zip";
 
-	if (!m_FileSystem->DirectoryExists(update_path))
+	if (!Core::FileSystem::Get()->DirectoryExists(update_path))
 	{
 		std::cerr << "Binary path from source does not exist! Please re-check your binary path or build the source first." << std::endl;
 		return false;
 	}
 
 	// then delete an existing update file
-	/*
-	if (m_FileSystem->FileExists(update_file))
+	if (Core::FileSystem::Get()->FileExists(update_file))
 	{
-		if (!m_FileSystem->RemoveFile(update_file))
+		if (!Core::FileSystem::Get()->RemoveFile(update_file))
 		{
 			std::cerr << "Could not delete the file " << update_file << std::endl;
 			return false;
@@ -112,11 +107,13 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature)
 	
 		std::cout << "Adding " << zip_name.c_str() << "..." << std::endl;
 	
-		m_FileSystem->Open(p.string(), "r");
-		int64 file_size = m_FileSystem->Size();
+		uint32 file_size = (uint32)Core::FileSystem::Get()->Size(p.string());
 		Byte *data = new Byte[file_size];
-		m_FileSystem->Read(data, (uint32)file_size);
-		m_FileSystem->Close();
+		if (!Core::FileSystem::Get()->ReadFile(p.string(), data, &file_size))
+		{
+			std::cerr << "Could not read file " << p.string() << "!" << std::endl;
+			return false;
+		}
 	
 		mz_bool status = mz_zip_add_mem_to_archive_file_in_place(update_file.c_str(), zip_name.c_str(), data, file_size, nullptr, 0, MZ_BEST_COMPRESSION);
 		if (!status)
@@ -128,40 +125,42 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature)
 		delete[] data;
 		data = nullptr;
 	}
-	*/
 
 	std::cout << "Added all files." << std::endl;
 
 	// Load the whole ZIP file into memory
-	m_FileSystem->Open(update_file, "r");
-	int64 update_file_size = m_FileSystem->Size();
-	m_UpdateFile.Alloc((uint32)update_file_size);
-	m_FileSystem->Read(m_UpdateFile.Data, (uint32)update_file_size);
-	m_FileSystem->Close();
+	uint32 update_file_size = (uint32)Core::FileSystem::Get()->Size(update_file);
+	m_UpdateFile.Alloc(update_file_size);
+
+	if (!Core::FileSystem::Get()->ReadFile(update_file, m_UpdateFile.Data, &update_file_size))
+	{
+		std::cerr << "Could not read back in the update file!" << std::endl;
+		return false;
+	}
 
 	if (forceDeleteSignature)
 	{
-		if (m_FileSystem->FileExists(m_Config.PrivateKeyPath))
+		if (Core::FileSystem::Get()->FileExists(m_Config.PrivateKeyPath))
 		{
-			if (!m_FileSystem->RemoveFile(m_Config.PrivateKeyPath))
+			if (!Core::FileSystem::Get()->RemoveFile(m_Config.PrivateKeyPath))
 			{
 				std::cerr << "Could not remove private key!" << std::endl;
 				return false;
 			}
 		}
 
-		if (m_FileSystem->FileExists(m_Config.PublicKeyPath))
+		if (Core::FileSystem::Get()->FileExists(m_Config.PublicKeyPath))
 		{
-			if (!m_FileSystem->RemoveFile(m_Config.PublicKeyPath))
+			if (!Core::FileSystem::Get()->RemoveFile(m_Config.PublicKeyPath))
 			{
 				std::cerr << "Could not remove public key!" << std::endl;
 				return false;
 			}
 		}
 
-		if (m_FileSystem->FileExists(m_Config.SignaturePath))
+		if (Core::FileSystem::Get()->FileExists(m_Config.SignaturePath))
 		{
-			if (!m_FileSystem->RemoveFile(m_Config.SignaturePath))
+			if (!Core::FileSystem::Get()->RemoveFile(m_Config.SignaturePath))
 			{
 				std::cerr << "Could not remove signature!" << std::endl;
 				return false;
@@ -170,15 +169,15 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature)
 	}
 
 	Core::Crypto::key_t private_key, public_key;
-	if (m_FileSystem->FileExists(m_Config.PrivateKeyPath))
+	if (Core::FileSystem::Get()->FileExists(m_Config.PrivateKeyPath))
 	{
-		if (!m_FileSystem->ReadFile(m_Config.PublicKeyPath, public_key.Data, &public_key.Size))
+		if (!Core::FileSystem::Get()->ReadFile(m_Config.PublicKeyPath, public_key.Data, &public_key.Size))
 		{
 			std::cerr << "Could not read the public key!" << std::endl;
 			return false;
 		}
 		
-		if (!m_FileSystem->ReadFile(m_Config.PrivateKeyPath, private_key.Data, &private_key.Size))
+		if (!Core::FileSystem::Get()->ReadFile(m_Config.PrivateKeyPath, private_key.Data, &private_key.Size))
 		{
 			std::cerr << "Could not read the private key!" << std::endl;
 			return false;
@@ -210,9 +209,9 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature)
 		return false;
 	}
 
-	if (m_FileSystem->FileExists(m_Config.SignaturePath))
+	if (Core::FileSystem::Get()->FileExists(m_Config.SignaturePath))
 	{
-		if (!m_FileSystem->RemoveFile(m_Config.SignaturePath))
+		if (!Core::FileSystem::Get()->RemoveFile(m_Config.SignaturePath))
 		{
 			std::cerr << "Could not delete the old signature file!" << std::endl;
 			return false;
@@ -220,22 +219,22 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature)
 	}
 
 	// Now write the security files
-	if (!m_FileSystem->FileExists(m_Config.PrivateKeyPath))
+	if (!Core::FileSystem::Get()->FileExists(m_Config.PrivateKeyPath))
 	{
-		if (!m_FileSystem->WriteFile(m_Config.PrivateKeyPath, private_key.Data, private_key.Size))
+		if (!Core::FileSystem::Get()->WriteFile(m_Config.PrivateKeyPath, private_key.Data, private_key.Size))
 		{
 			std::cerr << "Could not write private key file!" << std::endl;
 			return false;
 		}
 	}
 
-	if (!m_FileSystem->WriteFile(m_Config.PublicKeyPath, public_key.Data, public_key.Size))
+	if (!Core::FileSystem::Get()->WriteFile(m_Config.PublicKeyPath, public_key.Data, public_key.Size))
 	{
 		std::cerr << "Could not write public key file!" << std::endl;
 		return false;
 	}
 
-	if (!m_FileSystem->WriteFile(m_Config.SignaturePath, m_UpdateSignature.Data, SIG_BYTES))
+	if (!Core::FileSystem::Get()->WriteFile(m_Config.SignaturePath, m_UpdateSignature.Data, SIG_BYTES))
 	{
 		std::cerr << "Could not write the new signature!" << std::endl;
 		return false;
@@ -247,8 +246,6 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature)
 	std::cout << "Generated server crc: " << m_ServerVersion << std::endl;
 	std::cout << "Loaded update with size " << m_UpdateFile.Size << std::endl;
 
-//	free(public_key.Data);
-//	free(private_key.Data);
 	return true;
 }
 
