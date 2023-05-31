@@ -75,16 +75,15 @@ void Client::Run()
 				// TODO: start CamClient application
 				std::cout << "Starting CamClient..." << std::endl;
 
+				// Update local version
+				m_LocalVersion = Core::utils::GetLocalVersion(m_Config.UpdateTargetPath);
+
 				m_Status.Code = ClientStatusCode::NONE;
 			}
 			else
 			{
 				std::cerr << "Could not extract the archive!" << std::endl;
 			}
-		}
-		else if (m_Status.Code == ClientStatusCode::BAD_CRC)
-		{
-			std::cerr << "ERROR: Bad CRC from last update." << std::endl;
 		}
 		else if (m_Status.Code == ClientStatusCode::BAD_SIG)
 		{
@@ -98,7 +97,7 @@ void Client::Run()
 		MessageLoop();
 
 		// Process updates.
-		auto now_ms = Core::QueryMS();
+		int64 now_ms = Core::QueryMS();
 		UpdateProgress(now_ms, m_Host);
 
 		static uint32 last_bytes;
@@ -198,7 +197,6 @@ void Client::MessageLoop()
 				return;
 			}
 
-			m_ServerVersion = msg->ServerVersion;
 			memcpy(&m_UpdateSignature, &msg->UpdateSignature, sizeof(Signature));
 			std::cout << "Received update begin request, total size: " << msg->UpdateSize << std::endl;
 
@@ -221,12 +219,6 @@ void Client::MessageLoop()
 			}
 
 			ServerUpdatePieceMessage *msg = (ServerUpdatePieceMessage *)BUF;
-
-			// Check that the version matches.
-			if (m_ServerVersion != msg->ServerVersion)
-			{
-				return;
-			}
 
 			// Verify that the tokens match.
 			if (msg->ClientToken != m_ClientToken || msg->ServerToken != m_ServerToken)
@@ -371,7 +363,6 @@ void Client::Reset()
 
 	m_ClientToken = 0;
 	m_ServerToken = 0;
-	m_ServerVersion = 0;
 
 	m_UpdateIdx = 0;
 }
@@ -409,31 +400,24 @@ void Client::UpdateProgress(int64 now_ms, Core::addr_t addr)
 	std::cout << "Update index: " << m_UpdateIdx << ", pieces size: " << m_UpdatePieces.Size << std::endl;
 	if (m_UpdateIdx >= m_UpdatePieces.Size)
 	{
-		uint32 crc = Core::Crc32(m_UpdateData.Ptr, m_UpdateData.Size);
-		std::cout << "CRC: " << crc << ", server version: " << m_ServerVersion << std::endl;
-	//	if (crc == m_ServerVersion)
+	//	if (m_Crypto->TestSignature(m_UpdateSignature.Data, SIG_BYTES, m_UpdateData.Ptr, m_UpdateData.Size, m_Config.PublicKey.Data, m_Config.PublicKey.Size))
 	//	{
-		//	if (m_Crypto->TestSignature(m_UpdateSignature.Data, SIG_BYTES, m_UpdateData.Ptr, m_UpdateData.Size, m_Config.PublicKey.Data, m_Config.PublicKey.Size))
-		//	{
-				if (Core::FileSystem::Get()->WriteFile(m_Config.UpdateBinaryPath + "/update.zip", m_UpdateData.Ptr, m_UpdateData.Size))
-				{
-					m_IsFinished = true;
-					m_Status.Code = ClientStatusCode::UP_TO_DATE;
-					return;
-				}
-				else
-				{
-					m_Status.Code = ClientStatusCode::BAD_WRITE;
-				}
-		//	}
-		//	else
-		//	{
-		//		m_Status.Code = ClientStatusCode::BAD_SIG;
-		//	}
+			std::cout << "Writing file " << (m_Config.UpdateBinaryPath + "/update.zip") << std::endl;
+			if (Core::FileSystem::Get()->WriteFile(m_Config.UpdateBinaryPath + "/update.zip", m_UpdateData.Ptr, m_UpdateData.Size))
+			{
+				m_IsFinished = true;
+				m_Status.Code = ClientStatusCode::UP_TO_DATE;
+				std::cout << "File " << (m_Config.UpdateBinaryPath + "/update.zip") << " written successfully." << std::endl;
+				return;
+			}
+			else
+			{
+				m_Status.Code = ClientStatusCode::BAD_WRITE;
+			}
 	//	}
 	//	else
 	//	{
-	//		m_Status.Code = ClientStatusCode::BAD_CRC;
+	//		m_Status.Code = ClientStatusCode::BAD_SIG;
 	//	}
 
 		Reset();
@@ -451,7 +435,6 @@ void Client::UpdateProgress(int64 now_ms, Core::addr_t addr)
 		msg.Header.Type = MessageType::CLIENT_UPDATE_PIECE;
 		msg.ClientToken = m_ClientToken;
 		msg.ServerToken = m_ServerToken;
-		msg.ServerVersion = m_ServerVersion;
 
 		bool found_missing = false;
 		uint32 end_idx = 0;
@@ -489,6 +472,7 @@ void Client::UpdateProgress(int64 now_ms, Core::addr_t addr)
 		if (!found_missing)
 		{
 			m_UpdateIdx = m_UpdatePieces.Size;
+			std::cout << "Requested all update pieces successfully." << std::endl;
 		}
 	}
 }

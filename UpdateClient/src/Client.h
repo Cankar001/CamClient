@@ -52,11 +52,6 @@ enum class ClientStatusCode
 	UP_TO_DATE,
 	
 	/// <summary>
-	/// The CRC did not match.
-	/// </summary>
-	BAD_CRC,
-	
-	/// <summary>
 	/// The signature is missing or not generated.
 	/// </summary>
 	BAD_SIG,
@@ -110,7 +105,6 @@ private:
 	uint64 m_ServerToken;
 	uint32 m_ClientVersion;
 	uint32 m_LocalVersion;
-	uint32 m_ServerVersion;
 	ClientStatus m_Status;
 	bool m_IsFinished = true;
 	bool m_IsUpdating = false;

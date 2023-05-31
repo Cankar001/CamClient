@@ -12,7 +12,6 @@ Server::Server(const ServerConfig &config)
 {
 	m_LastUpdateCheckMS = 0;
 	m_LastUpdateWriteMS = 0;
-	m_ServerVersion = 0;
 	m_UpdateSignature = {};
 
 	m_Socket = Core::Socket::Create();
@@ -101,7 +100,7 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature)
 		std::string current_file_name = p.string();
 	
 		// skip the archive itself
-		if (p.string().find("update") != std::string::npos)
+		if (current_file_name.find("update") != std::string::npos)
 		{
 			continue;
 		}
@@ -130,9 +129,7 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature)
 	std::cout << "Added all files." << std::endl;
 
 	// Load the whole ZIP file into memory
-	uint32 update_file_size = 0;
-	m_UpdateFile.Data = Core::FileSystem::Get()->ReadFile(update_file, &update_file_size);
-	m_UpdateFile.Size = update_file_size;
+	m_UpdateFile.Data = Core::FileSystem::Get()->ReadFile(update_file, &m_UpdateFile.Size);
 	
 	if (!m_UpdateFile.Data)
 	{
@@ -176,6 +173,7 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature)
 		Byte *public_key_data = Core::FileSystem::Get()->ReadFile(m_Config.PublicKeyPath, &public_key.Size);
 		memcpy(public_key.Data, public_key_data, public_key.Size);
 		delete[] public_key_data;
+		public_key_data = nullptr;
 
 		if (!public_key.Data)
 		{
@@ -186,6 +184,7 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature)
 		Byte *private_key_data = Core::FileSystem::Get()->ReadFile(m_Config.PrivateKeyPath, &private_key.Size);
 		memcpy(private_key.Data, private_key_data, private_key.Size);
 		delete[] private_key_data;
+		private_key_data = nullptr;
 
 		if (!private_key.Data)
 		{
@@ -195,10 +194,6 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature)
 	}
 	else
 	{
-		// First get the size needed for the keys and store them in the public_key and private_key variable
-		m_Crypto->GenKeys(&public_key, &private_key);
-
-		// then generate again
 		if (!m_Crypto->GenKeys(&public_key, &private_key))
 		{
 			std::cerr << "Could not generate public/private key pair!" << std::endl;
@@ -250,10 +245,8 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature)
 		return false;
 	}
 
-	m_ServerVersion = Core::Crc32(m_UpdateFile.Data, m_UpdateFile.Size);
 	m_PublicKey.Size = public_key.Size;
 	memcpy(m_PublicKey.Data, public_key.Data, sizeof(public_key.Data));
-	std::cout << "Generated server crc: " << m_ServerVersion << std::endl;
 	std::cout << "Loaded update with size " << m_UpdateFile.Size << std::endl;
 
 	return true;
@@ -344,7 +337,6 @@ bool Server::Step()
 		res.Header.Type = MessageType::SERVER_UPDATE_BEGIN;
 		res.ClientToken = msg->ClientToken;
 		res.ServerToken = client->ServerToken;
-		res.ServerVersion = m_ServerVersion;
 		res.UpdateSize = m_UpdateFile.Size;
 		res.UpdateSignature = m_UpdateSignature;
 		m_Socket->Send(&res, sizeof(res), addr);
@@ -363,13 +355,9 @@ bool Server::Step()
 		ClientUpdatePieceMessage *msg = (ClientUpdatePieceMessage *)BUF;
 		std::cout << "Received update piece request for update position: " << msg->PiecePos << std::endl;
 
-		if (msg->ServerVersion != m_LocalVersion)
-		{
-			return true;
-		}
-
 		if (msg->PiecePos >= m_UpdateFile.Size)
 		{
+			std::cerr << "The request position was larger than the file!" << std::endl;
 			return true;
 		}
 
@@ -377,16 +365,19 @@ bool Server::Step()
 
 		if (!client)
 		{
+			std::cerr << "Could not find the client for addr " << addr.Host << ", port " << addr.Port << std::endl;
 			return true;
 		}
 
 		if (!client->IsBandwidthAvailable(now_ms))
 		{
+			std::cerr << "Client has no bandwidth available!" << std::endl;
 			return true;
 		}
 
 		if (msg->ServerToken != client->ServerToken)
 		{
+			std::cerr << "Server tokens did not match!" << std::endl;
 			return true;
 		}
 
@@ -396,7 +387,6 @@ bool Server::Step()
 		res.Header.Type = MessageType::SERVER_UPDATE_PIECE;
 		res.ClientToken = msg->ClientToken;
 		res.ServerToken = client->ServerToken;
-		res.ServerVersion = m_ServerVersion;
 		res.PiecePos = msg->PiecePos;
 		res.PieceSize = (uint16)Core::utils::Min<uint32>(m_UpdateFile.Size - msg->PiecePos, PIECE_BYTES);
 

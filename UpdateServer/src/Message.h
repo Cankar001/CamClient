@@ -54,7 +54,6 @@ struct ClientUpdatePieceMessage
 	header_t Header;
 	uint64 ClientToken;
 	uint64 ServerToken;
-	uint32 ServerVersion;
 	uint32 PiecePos;
 };
 
@@ -70,7 +69,6 @@ struct ServerUpdateBeginMessage
 	header_t Header;
 	uint64 ClientToken;
 	uint64 ServerToken;
-	uint32 ServerVersion;
 	uint32 UpdateSize;
 	Signature UpdateSignature;
 };
@@ -87,7 +85,6 @@ struct ServerUpdatePieceMessage
 	header_t Header;
 	uint64 ClientToken;
 	uint64 ServerToken;
-	uint32 ServerVersion;
 	uint32 PiecePos;
 	uint16 PieceSize;
 };

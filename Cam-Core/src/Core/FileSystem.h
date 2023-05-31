@@ -33,8 +33,8 @@ namespace Core
 
 	struct FileSystemBuffer
 	{
-		Byte *Data;
-		uint32 Size;
+		Byte *Data = nullptr;
+		uint32 Size = 0;
 
 		FileSystemBuffer()
 			: Data(nullptr), Size(0)
