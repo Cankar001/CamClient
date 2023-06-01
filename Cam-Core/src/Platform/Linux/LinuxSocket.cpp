@@ -61,11 +61,17 @@ namespace Core
 	
 	void LinuxSocket::Close()
 	{
-		close(m_Connection);
-		shutdown(m_Socket, SHUT_RDWR);
+		if (m_Connection != -1)
+		{
+			close(m_Connection);
+			shutdown(m_Socket, SHUT_RDWR);
+			m_Socket = -1;
+			m_Connection = -1;
+			return;
+		}
 
+		close(m_Socket);
 		m_Socket = -1;
-		m_Connection = -1;
 	}
 	
 	bool LinuxSocket::Bind(uint16 port)
