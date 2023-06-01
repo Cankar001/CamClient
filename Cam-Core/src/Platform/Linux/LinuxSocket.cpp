@@ -116,7 +116,7 @@ namespace Core
 	
 	bool LinuxSocket::SetNonBlocking(bool enabled)
 	{
-		return fcntl(m_Socket, F_SETFL, O_NONBLOCK);
+		return fcntl(m_Socket, F_SETFL, O_NONBLOCK) != -1;
 	}
 	
 	addr_t LinuxSocket::Lookup(const std::string &host, uint16 port)
