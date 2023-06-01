@@ -21,7 +21,7 @@ namespace Core
 
 		virtual ~Socket() {}
 
-		virtual bool Open() = 0;
+		virtual bool Open(bool is_client = false, const std::string &ip = "", uint16 port = 0) = 0;
 		virtual void Close() = 0;
 
 		virtual bool Bind(uint16 port) = 0;

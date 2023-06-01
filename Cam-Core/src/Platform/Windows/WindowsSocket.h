@@ -14,7 +14,7 @@ namespace Core
 		WindowsSocket();
 		~WindowsSocket();
 
-		virtual bool Open() override;
+		virtual bool Open(bool is_client = false, const std::string &ip = "", uint16 port = 0) override;
 		virtual void Close() override;
 
 		virtual bool Bind(uint16 port) override;

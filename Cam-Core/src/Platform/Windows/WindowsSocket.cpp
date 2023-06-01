@@ -30,7 +30,7 @@ namespace Core
 		}
 	}
 	
-	bool WindowsSocket::Open()
+	bool WindowsSocket::Open(bool is_client, const std::string &ip, uint16 port)
 	{
 		Close();
 		m_Socket = socket(AF_INET, SOCK_DGRAM, 0);

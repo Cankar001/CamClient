@@ -12,7 +12,7 @@ Client::Client(const ClientConfig &config)
 	m_Socket = Core::Socket::Create();
 	m_Crypto = Core::Crypto::Create();
 
-	if (!m_Socket->Open())
+	if (!m_Socket->Open(true, m_Config.ServerIP, m_Config.Port))
 	{
 		std::cerr << "Socket could not be opened!" << std::endl;
 	}

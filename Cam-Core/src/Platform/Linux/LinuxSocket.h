@@ -4,6 +4,13 @@
 
 #include "Net/Socket.h"
 
+#include <netinet/in.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+
 namespace Core
 {
 	class LinuxSocket : public Socket
@@ -13,7 +20,7 @@ namespace Core
 		LinuxSocket();
 		~LinuxSocket();
 
-		virtual bool Open() override;
+		virtual bool Open(bool is_client = false, const std::string &ip = "", uint16 port = 0) override;
 		virtual void Close() override;
 
 		virtual bool Bind(uint16 port) override;
@@ -26,7 +33,7 @@ namespace Core
 
 	private:
 
-
+		int32 m_Socket = -1;
 	};
 }
 
