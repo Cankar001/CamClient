@@ -69,6 +69,7 @@ private:
 	bool m_Running = true;
 	bool m_NetworkThreadFinished = false;
 	bool m_SentConnectionCloseRequest = false;
+	bool m_ConnectedToServer = false;
 	Camera m_Camera;
 
 	std::thread m_NetworkThread;

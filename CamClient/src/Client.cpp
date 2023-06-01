@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#define MAX_NETWORK_READ_RETRIES 20
+#define MAX_NETWORK_READ_RETRIES 200
 
 Client::Client(const ClientConfig &config)
 	: m_Config(config), m_Camera(false, 1280, 720)
@@ -38,6 +38,8 @@ void Client::Release()
 
 	if (m_NetworkThread.joinable())
 		m_NetworkThread.join();
+
+	m_Camera.Release();
 
 	if (m_Socket)
 	{
@@ -98,7 +100,7 @@ void Client::NetworkLoop()
 		if (len < 0)
 		{
 			++current_connection_retry;
-			if (current_connection_retry >= MAX_NETWORK_READ_RETRIES)
+			if (current_connection_retry >= MAX_NETWORK_READ_RETRIES && !m_ConnectedToServer)
 			{
 				std::cerr << "Fatal error: Could not connect to server!" << std::endl;
 				m_Running = false;
@@ -216,6 +218,7 @@ bool Client::OnConnectionAccepted(Byte *message, uint32 length)
 
 
 
+	m_ConnectedToServer = true;
 	std::cout << "Connected to server successfully!" << std::endl;
 	return true;
 }
