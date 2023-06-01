@@ -70,7 +70,7 @@ namespace Core
 
 			T result;
 			std::queue<T> temp;
-			uint32 current_index = m_Size - 1;
+			uint32 current_index = 0;
 			while (!m_Queue.empty())
 			{
 				if (current_index == index)
@@ -79,6 +79,7 @@ namespace Core
 					break;
 				}
 
+				++current_index;
 				temp.push(m_Queue.front());
 				m_Queue.pop();
 			}
