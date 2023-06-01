@@ -76,7 +76,7 @@ namespace Core
 		address.sin_addr.s_addr = INADDR_ANY;
 		address.sin_port = htons(port);
 
-		// Forcefully attaching socket to the port 8080
+		// Forcefully attaching socket to the port
 		if (bind(m_Socket, (struct sockaddr *)&address, sizeof(address)) < 0)
 		{
 			return false;
