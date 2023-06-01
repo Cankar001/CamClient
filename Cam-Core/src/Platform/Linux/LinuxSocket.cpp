@@ -2,6 +2,7 @@
 
 #ifdef CAM_PLATFORM_LINUX
 
+#include <iostream>
 #include <assert.h>
 #include <netdb.h>
 
@@ -39,7 +40,7 @@ namespace Core
 		if (is_client)
 		{
 			struct sockaddr_in serv_addr;
-			int status;
+			int32 status;
 
 			serv_addr.sin_family = AF_INET;
 			serv_addr.sin_port = htons(port);
@@ -105,13 +106,26 @@ namespace Core
 	int32 LinuxSocket::Recv(void *dst, int32 dst_bytes, addr_t *addr)
 	{
 		int32 handle = m_Connection == -1 ? m_Socket : m_Connection;
-		return read(handle, dst, dst_bytes);
+		struct sockaddr dest_addr;
+		int32 addrLen = sizeof(dest_addr);
+
+		int32 bytes_received = recvfrom(handle, dst, dst_bytes, 0, &dest_addr, &addrLen);
+		addr->Host = dest_addr.sin_addr;
+		addr->Port = dest_addr.sin_port;
+		return bytes_received;
 	}
 	
 	int32 LinuxSocket::Send(void const *src, int32 src_bytes, addr_t addr)
 	{
 		int32 handle = m_Connection == -1 ? m_Socket : m_Connection;
-		return send(handle, src, src_bytes, 0);
+		struct sockaddr_in dest_addr;
+
+		memset(&dest_addr, 0, sizeof(dest_addr));
+		dest_addr.sin_family = AF_INET;
+		dest_addr.sin_addr = addr.Host;
+		dest_addr.sin_port = addr.Port;
+
+		return sendto(handle, src, src_bytes, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
 	}
 	
 	bool LinuxSocket::SetNonBlocking(bool enabled)
