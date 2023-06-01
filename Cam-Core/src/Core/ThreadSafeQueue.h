@@ -68,7 +68,7 @@ namespace Core
 				return {};
 			}
 
-			T result;
+			T result = {};
 			std::queue<T> temp;
 			uint32 current_index = 0;
 			while (!m_Queue.empty())
