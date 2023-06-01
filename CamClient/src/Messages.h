@@ -19,6 +19,8 @@ struct FrameData
 {
 	Byte *Frame;
 	uint32 FrameSize;
+	uint32 FrameWidth;
+	uint32 FrameHeight;
 };
 
 struct header_t

@@ -3,8 +3,10 @@
 #include <Cam-Core.h>
 #include <string>
 #include <thread>
+#include <vector>
 
 #include "Camera.h"
+#include "Messages.h"
 
 struct ClientConfig
 {
@@ -20,9 +22,21 @@ public:
 	~Client();
 
 	/// <summary>
+	/// Frees all camera resources and joins all worker threads.
+	/// </summary>
+	void Release();
+
+	/// <summary>
+	/// Tells, if the client is currently running.
+	/// </summary>
+	/// <returns>Returns true, if all worker threads are running.</returns>
+	bool IsRunning() const { return m_Running; }
+
+	/// <summary>
 	/// Runs the client, is responsible to start all worker threads.
 	/// </summary>
-	void Run();
+	/// <param name="shouldShowFrames">Determines, if the main thread should show all current camera frames.</param>
+	void Run(bool shouldShowFrames = true);
 
 	/// <summary>
 	/// Handles the communication with the server.
@@ -33,6 +47,11 @@ public:
 	/// Handles receiving the frames from the connected camera.
 	/// </summary>
 	void CameraLoop();
+
+	/// <summary>
+	/// Shows all current frames of the camera.
+	/// </summary>
+	void Show();
 
 private:
 
@@ -48,8 +67,12 @@ private:
 	
 	uint32 m_Version;
 	bool m_Running = true;
+	bool m_NetworkThreadFinished = false;
+	bool m_SentConnectionCloseRequest = false;
 	Camera m_Camera;
 
 	std::thread m_NetworkThread;
 	std::thread m_CameraThread;
+
+	std::vector<FrameData> m_Frames;
 };

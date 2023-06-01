@@ -43,6 +43,8 @@ public:
 	/// <returns>Returns a byte buffer, containing the pixel data of the frame, or nullptr on failure.</returns>
 	Byte *GetFrame(uint32 frameIndex, uint32 *outFrameSize, uint32 *outFrameWidth, uint32 *outFrameHeight);
 
+	bool IsRunning() const { return m_CameraRunning; }
+
 private:
 
 	cv::Mat Zoom(cv::Mat frame, std::pair<float, float> center);
@@ -55,6 +57,8 @@ private:
 	uint32 m_Height = 0;
 	bool m_FlipImage = false;
 	float m_Scale = 1.0f;
+
+	bool m_CameraRunning = true;
 
 	bool m_TouchedZoom = false;
 	float m_CenterX = 0, m_CenterY = 0;

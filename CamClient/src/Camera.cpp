@@ -58,6 +58,7 @@ void Camera::GenerateFrames()
 
 void Camera::Release()
 {
+	m_CameraRunning = false;
 	m_CameraStream.release();
 	cv::destroyAllWindows();
 }
@@ -117,6 +118,7 @@ Byte *Camera::GetFrame(uint32 frameIndex, uint32 *outFrameSize, uint32 *outFrame
 {
 	if (frameIndex >= m_ImageQueue.Size())
 	{
+		std::cerr << "frame index was too large! FrameIndex: " << frameIndex << ", max size: " << m_ImageQueue.Size() << std::endl;
 		*outFrameSize = 0;
 		*outFrameWidth = 0;
 		*outFrameHeight = 0;

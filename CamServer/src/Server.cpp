@@ -97,7 +97,10 @@ bool Server::OnClientConnected(Core::addr_t &clientAddr, Byte *message, int32 ad
 		return false;
 	}
 
-
+	ServerConnectionStartResponse response = {};
+	response.Header.Type = SERVER_CONNECTION_START;
+	response.Header.Version = m_Version;
+	m_Socket->Send(&response, sizeof(response), clientAddr);
 
 	std::cout << "Client " << clientAddr.Value << " connected successfully!" << std::endl;
 	return true;
@@ -120,7 +123,10 @@ bool Server::OnClientDisconnected(Core::addr_t &clientAddr, Byte *message, int32
 		return false;
 	}
 
-
+	ServerConnectionCloseResponse response = {};
+	response.Header.Type = SERVER_CONNECTION_CLOSE;
+	response.Header.Version = m_Version;
+	m_Socket->Send(&response, sizeof(response), clientAddr);
 
 	std::cout << "Client " << clientAddr.Value << " disconnected successfully!" << std::endl;
 	return true;
@@ -143,7 +149,10 @@ bool Server::OnClientFrame(Core::addr_t &clientAddr, Byte *message, int32 addrLe
 		return false;
 	}
 
-
+	ServerFrameResponse response = {};
+	response.Header.Type = SERVER_FRAME;
+	response.Header.Version = m_Version;
+	m_Socket->Send(&response, sizeof(response), clientAddr);
 
 	std::cout << "Server received frame from Client " << clientAddr.Value << " successfully!" << std::endl;
 	return true;
