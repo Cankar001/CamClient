@@ -1,10 +1,10 @@
 #include <iostream>
 
-#include "Camera.h"
+#include "PythonCamera.h"
 
 int main(int argc, char *argv[])
 {
-	Camera c(false, 1280, 720);
+	PythonCamera::Camera c(false, 1280, 720);
 	c.Stream();
 	c.Show();
 	c.ReleaseStream();

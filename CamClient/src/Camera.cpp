@@ -1,11 +1,9 @@
 #include "Camera.h"
 
-#include <exception>
-
 #define MAX_RETRIES 5
 
-Camera::Camera(bool flip, uint32 width, uint32 height)
-	: m_Flip(flip), m_Width(width), m_Height(height)
+Camera::Camera(bool flipImage, uint32 width, uint32 height)
+	: m_FlipImage(flipImage), m_Width(width), m_Height(height)
 {
 	m_CameraStream = cv::VideoCapture(0);
 	m_CenterX = (float)m_Width / 2;
@@ -21,52 +19,116 @@ Camera::~Camera()
 	Release();
 }
 
+
+void Camera::GenerateFrames()
+{
+	cv::Mat frame;
+	uint32 failed_retries = 0;
+
+	bool success = m_CameraStream.read(frame);
+	if (!success)
+	{
+		++failed_retries;
+		if (failed_retries >= MAX_RETRIES)
+		{
+			Release();
+		}
+		
+		return;
+	}
+
+	if (m_FlipImage)
+	{
+		cv::flip(frame, frame, 0);
+		cv::flip(frame, frame, 1);
+	}
+
+	if (m_TouchedZoom)
+	{
+		frame = Zoom(frame, { m_CenterX, m_CenterY });
+	}
+	else
+	{
+		if (m_Scale != 1)
+			frame = Zoom(frame, { 0.0f, 0.0f });
+	}
+
+	m_ImageQueue.Enqueue(frame);
+}
+
 void Camera::Release()
 {
-	m_CameraIsStreaming = false; 
 	m_CameraStream.release();
 	cv::destroyAllWindows();
 }
 
-void Camera::ReleaseStream()
+bool Camera::Show(uint32 frameIndex)
 {
-	m_CameraStreamThread.join();
-}
-
-void Camera::Stream()
-{
-	if (m_CameraIsStreaming)
-		return;
-
-	m_CameraStreamThread = std::thread(&Camera::StreamImage, std::ref(*this));
-	m_CameraIsStreaming = true;
-}
-
-void Camera::Show()
-{
-	while (true)
+	if (frameIndex >= m_ImageQueue.Size())
 	{
-		cv::Mat frame = m_StreamQueue.Dequeue();
-		cv::namedWindow("Frame", cv::WND_PROP_FULLSCREEN);
-		cv::setWindowProperty("Frame", cv::WND_PROP_FULLSCREEN, cv::WND_PROP_FULLSCREEN);
-		cv::imshow("Frame", frame);
-		//cv::setMouseCallback("Frame", );
-
-		char key = cv::waitKey(1);
-		if (key == 'q')
-		{
-			Release();
-			break;
-		}
-		else if (key == 'z')
-		{
-			ZoomIn();
-		}
-		else if (key == 'x')
-		{
-			ZoomOut();
-		}
+		return false;
 	}
+
+	cv::Mat frame = m_ImageQueue.Get(frameIndex);
+	cv::namedWindow("Frame", cv::WND_PROP_FULLSCREEN);
+	cv::setWindowProperty("Frame", cv::WND_PROP_FULLSCREEN, cv::WND_PROP_FULLSCREEN);
+	cv::imshow("Frame", frame);
+
+	char key = cv::waitKey(1);
+	if (key == 'q')
+	{
+		Release();
+	}
+	else if (key == 'z')
+	{
+		ZoomIn();
+	}
+	else if (key == 'x')
+	{
+		ZoomOut();
+	}
+
+	return true;
+}
+
+void Camera::ShowLive()
+{
+	cv::Mat frame = m_ImageQueue.Dequeue();
+	cv::namedWindow("Frame", cv::WND_PROP_FULLSCREEN);
+	cv::setWindowProperty("Frame", cv::WND_PROP_FULLSCREEN, cv::WND_PROP_FULLSCREEN);
+	cv::imshow("Frame", frame);
+
+	char key = cv::waitKey(1);
+	if (key == 'q')
+	{
+		Release();
+	}
+	else if (key == 'z')
+	{
+		ZoomIn();
+	}
+	else if (key == 'x')
+	{
+		ZoomOut();
+	}
+}
+
+Byte *Camera::GetFrame(uint32 frameIndex, uint32 *outFrameSize, uint32 *outFrameWidth, uint32 *outFrameHeight)
+{
+	if (frameIndex >= m_ImageQueue.Size())
+	{
+		*outFrameSize = 0;
+		*outFrameWidth = 0;
+		*outFrameHeight = 0;
+		return nullptr;
+	}
+
+	cv::Mat frame = m_ImageQueue.Get(frameIndex);
+	*outFrameSize = sizeof(frame.data);
+	*outFrameWidth = frame.cols;
+	*outFrameHeight = frame.rows;
+
+	return frame.data;
 }
 
 cv::Mat Camera::Zoom(cv::Mat frame, std::pair<float, float> center)
@@ -95,8 +157,8 @@ cv::Mat Camera::Zoom(cv::Mat frame, std::pair<float, float> center)
 		{
 			m_CenterX = (float)(width * rate);
 		}
-			
-		if (m_CenterY < height *(1 - rate))
+
+		if (m_CenterY < height * (1 - rate))
 		{
 			m_CenterY = (float)(height * (1 - rate));
 		}
@@ -145,62 +207,3 @@ void Camera::ZoomOut()
 	}
 }
 
-void Camera::StreamImage()
-{
-	cv::Mat frame;
-	uint32 failed_retries = 0;
-
-	while (m_CameraIsStreaming)
-	{
-		bool success = m_CameraStream.read(frame);
-		if (!success)
-		{
-			++failed_retries;
-			if (failed_retries >= MAX_RETRIES)
-			{
-				Release();
-				break;
-			}
-
-			continue;
-		}
-
-		if (m_Flip)
-		{
-			cv::flip(frame, frame, 0);
-			cv::flip(frame, frame, 1);
-		}
-
-		if (m_TouchedZoom)
-		{
-			frame = Zoom(frame, { m_CenterX, m_CenterY });
-		}
-		else
-		{
-			if (m_Scale != 1)
-				frame = Zoom(frame, {0.0f, 0.0f});
-		}
-
-		m_StreamQueue.Enqueue(frame);
-
-	//	cv::namedWindow("Frame", cv::WND_PROP_FULLSCREEN);
-	//	cv::setWindowProperty("Frame", cv::WND_PROP_FULLSCREEN, cv::WND_PROP_FULLSCREEN);
-	//	cv::imshow("Frame", frame);
-	//	//cv::setMouseCallback("Frame", );
-	//
-	//	char key = cv::waitKey(1);
-	//	if (key == 'q')
-	//	{
-	//		Release();
-	//		break;
-	//	}
-	//	else if (key == 'z')
-	//	{
-	//		ZoomIn();
-	//	}
-	//	else if (key == 'x')
-	//	{
-	//		ZoomOut();
-	//	}
-	}
-}

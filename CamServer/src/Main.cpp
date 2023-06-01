@@ -1,8 +1,16 @@
 #include <iostream>
 
+#include "Server.h"
+
 int main(int argc, char *argv[])
 {
-	std::cout << "Hello from CamServer!" << std::endl;
+	ServerConfig config;
+	config.ServerIP = "127.0.0.1";
+	config.Port = 45645;
+
+	Server s(config);
+	s.Run();
+
 	return 0;
 }
 

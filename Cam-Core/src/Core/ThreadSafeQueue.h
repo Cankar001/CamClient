@@ -14,7 +14,7 @@ namespace Core
 	public:
 
 		ThreadSafeQueue()
-			: q(), m(), c()
+			: m_Queue(), m_Mutex(), m_Conditional()
 		{
 		}
 
@@ -22,31 +22,88 @@ namespace Core
 		{
 		}
 
-		void Enqueue(const T &t)
+		void Enqueue(const T &value)
 		{
-			std::lock_guard<std::mutex> lock(m);
-			q.push(t);
-			c.notify_one();
+			std::lock_guard<std::mutex> lock(m_Mutex);
+			m_Queue.push(value);
+			m_Size++;
+			m_Conditional.notify_one();
 		}
 
 		T Dequeue()
 		{
-			std::unique_lock<std::mutex> lock(m);
-			while (q.empty())
+			std::unique_lock<std::mutex> lock(m_Mutex);
+			while (m_Queue.empty())
 			{
-				c.wait(lock);
+				m_Conditional.wait(lock);
 			}
 
-			T value = q.front();
-			q.pop();
+			T value = m_Queue.front();
+			m_Queue.pop();
+			m_Size--;
 			return value;
+		}
+
+		T Front()
+		{
+			std::unique_lock<std::mutex> lock(m_Mutex);
+			while (m_Queue.empty())
+			{
+				m_Conditional.wait(lock);
+			}
+
+			return m_Queue.front();
+		}
+
+		T Get(uint32 index)
+		{
+			std::unique_lock<std::mutex> lock(m_Mutex);
+			while (m_Queue.empty())
+			{
+				m_Conditional.wait(lock);
+			}
+			
+			if (index >= m_Queue.size())
+			{
+				return {};
+			}
+
+			T result;
+			std::queue<T> temp;
+			uint32 current_index = m_Size - 1;
+			while (!m_Queue.empty())
+			{
+				if (current_index == index)
+				{
+					result = m_Queue.front();
+					break;
+				}
+
+				temp.push(m_Queue.front());
+				m_Queue.pop();
+			}
+
+			while (!temp.empty())
+			{
+				m_Queue.push(temp.front());
+				temp.pop();
+			}
+
+			return result;
+		}
+
+		uint32 Size() const
+		{
+			return m_Size;
 		}
 
 	private:
 
-		std::queue<T> q;
-		mutable std::mutex m;
-		std::condition_variable c;
+		std::queue<T> m_Queue;
+		mutable std::mutex m_Mutex;
+		std::condition_variable m_Conditional;
+
+		uint32 m_Size = 0;
 	};
 }
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Client-Core.h>
+#include <Cam-Core.h>
 
 #include <string>
 
