@@ -200,8 +200,8 @@ void Client::Show()
 			continue;
 		}
 
-	//	std::cout << "Processing image... (TODO)" << std::endl;
-	//	std::cout << "Sending image to server... (TODO)" << std::endl;
+		ProcessFrame(frame, frame_size, frame_width, frame_height);
+		SendFrameToServer(frame, frame_size, frame_width, frame_height);
 	}
 }
 
@@ -216,7 +216,7 @@ bool Client::OnConnectionAccepted(Byte *message, uint32 length)
 	std::cout << "Trying to connect to server..." << std::endl;
 	ServerConnectionStartResponse *msg = (ServerConnectionStartResponse *)message;
 
-
+	// TODO
 
 	m_ConnectedToServer = true;
 	std::cout << "Connected to server successfully!" << std::endl;
@@ -234,7 +234,7 @@ bool Client::OnConnectionClosed(Byte *message, uint32 length)
 	std::cout << "Trying to disconnect from server..." << std::endl;
 	ServerConnectionCloseResponse *msg = (ServerConnectionCloseResponse *)message;
 
-
+	// TODO
 
 	std::cout << "Disconnected from server successfully!" << std::endl;
 	return true;
@@ -251,8 +251,29 @@ bool Client::OnFrameResponse(Byte *message, uint32 length)
 	std::cout << "Trying to read back the frame response from server..." << std::endl;
 	ServerFrameResponse *msg = (ServerFrameResponse *)message;
 
-
+	// TODO
 
 	std::cout << "Read back the frame response successfully!" << std::endl;
 	return true;
+}
+
+void Client::ProcessFrame(Byte *frame, uint32 frame_size, uint32 frame_width, uint32 frame_height)
+{
+	// TODO
+}
+
+void Client::SendFrameToServer(Byte *frame, uint32 frame_size, uint32 frame_width, uint32 frame_height)
+{
+	FrameData frame_data = {};
+	frame_data.Frame = frame;
+	frame_data.FrameSize = frame_size;
+	frame_data.FrameWidth = frame_width;
+	frame_data.FrameHeight = frame_height;
+
+	ClientFrameMessage msg = {};
+	msg.Header.Type = CLIENT_FRAME;
+	msg.Header.Version = m_Version;
+	msg.Frame = frame_data;
+
+	m_Socket->Send(&msg, sizeof(msg), m_Host);
 }

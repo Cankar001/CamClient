@@ -1,6 +1,7 @@
 #include "Server.h"
 
 #include <iostream>
+#include <opencv2/opencv.hpp>
 
 #include "Messages.h"
 
@@ -148,6 +149,9 @@ bool Server::OnClientFrame(Core::addr_t &clientAddr, Byte *message, int32 addrLe
 		std::cerr << "Version did not match with server version!" << std::endl;
 		return false;
 	}
+
+	//Byte *frame = msg->Frame.Frame;
+	//cv::Mat image(cv::Size(msg->Frame.FrameWidth, msg->Frame.FrameHeight), CV_8UC1, frame, cv::Mat::AUTO_STEP);
 
 	ServerFrameResponse response = {};
 	response.Header.Type = SERVER_FRAME;

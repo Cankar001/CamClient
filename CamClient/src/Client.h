@@ -55,9 +55,47 @@ public:
 
 private:
 
+	/// <summary>
+	/// Handles the connection begin response from the server.
+	/// </summary>
+	/// <param name="message">The message received from the server.</param>
+	/// <param name="length">The length of the message in bytes.</param>
+	/// <returns>Returns true, if the connection has been successfully confirmed.</returns>
 	bool OnConnectionAccepted(Byte *message, uint32 length);
+
+	/// <summary>
+	/// Handles the connection close response from the server.
+	/// </summary>
+	/// <param name="message">The message received from the server.</param>
+	/// <param name="length">The length of the message in bytes.</param>
+	/// <returns>Returns true, if the connection has been successfully confirmed to be closed.</returns>
 	bool OnConnectionClosed(Byte *message, uint32 length);
+
+	/// <summary>
+	/// Handles the frame response from the server.
+	/// </summary>
+	/// <param name="message">The message received from the server.</param>
+	/// <param name="length">The length of the message in bytes.</param>
+	/// <returns>Returns true, if the server responded with a OK status to the frame (Meaning that the frame was successfully received from the server).</returns>
 	bool OnFrameResponse(Byte *message, uint32 length);
+
+	/// <summary>
+	/// Processes the frame data (image analytics).
+	/// </summary>
+	/// <param name="frame">The frame to analyze.</param>
+	/// <param name="frame_size">The size of the frame in bytes.</param>
+	/// <param name="frame_width">The frame width.</param>
+	/// <param name="frame_height">The frame height.</param>
+	void ProcessFrame(Byte *frame, uint32 frame_size, uint32 frame_width, uint32 frame_height);
+
+	/// <summary>
+	/// Sends the provided frame data to the connected server.
+	/// </summary>
+	/// <param name="frame">The frame to send to the server.</param>
+	/// <param name="frame_size">The size of the frame in bytes.</param>
+	/// <param name="frame_width">The frame width.</param>
+	/// <param name="frame_height">The frame height.</param>
+	void SendFrameToServer(Byte *frame, uint32 frame_size, uint32 frame_width, uint32 frame_height);
 
 private:
 
