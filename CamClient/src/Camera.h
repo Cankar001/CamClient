@@ -24,25 +24,26 @@ public:
 	/// <summary>
 	/// Shows a specific frame, which was captured before by GenerateFrames. Must be called in a loop, to display a specific frame continuesly.
 	/// </summary>
-	/// <param name="frameIndex">The frameIndex, from which the image should be displayed.</param>
-	/// <returns>Returns true, if the frame index was found and the current image is displayed.</returns>
-	bool Show(uint32 frameIndex);
+	/// <param name="frameIndex">The frameIndex, from which the image should be extracted.</param>
+	/// <param name="out_frame_size">The total size of the frame data in bytes.</param>
+	/// <param name="out_frame_width">The width of the resulting frame data.</param>
+	/// <param name="out_frame_height">The height of the resulting frame data.</param>
+	/// <returns>Returns the pixel data of the requested frame number, if successful, otherwise nullptr.</returns>
+	Byte *Show(uint32 frameIndex, uint32 *out_frame_size, uint32 *out_frame_width, uint32 *out_frame_height);
 
 	/// <summary>
 	/// Shows every current frame, must be called continuesly, to display each current frame (aka. live video feed)
 	/// </summary>
-	void ShowLive();
+	/// <param name="out_frame_size">The total size of the frame data in bytes.</param>
+	/// <param name="out_frame_width">The width of the resulting frame data.</param>
+	/// <param name="out_frame_height">The height of the resulting frame data.</param>
+	/// <returns>Returns the pixel data of the most current frame, if successful, otherwise nullptr.</returns>
+	Byte *ShowLive(uint32 *out_frame_size, uint32 *out_frame_width, uint32 *out_frame_height);
 
 	/// <summary>
-	/// Retrieves the image data from a specific frame. The data can be used to e.g. send the frame via the network layer to the server.
+	/// Determines, if the camera was closed by the user or is currently running.
 	/// </summary>
-	/// <param name="frameIndex">The frameIndex, from which the frame should be taken.</param>
-	/// <param name="outFrameSize">The size of the frame in bytes.</param>
-	/// <param name="outFrameWidth">The width of the resulting frame.</param>
-	/// <param name="outFrameHeight">The height of the resulting frame.</param>
-	/// <returns>Returns a byte buffer, containing the pixel data of the frame, or nullptr on failure.</returns>
-	Byte *GetFrame(uint32 frameIndex, uint32 *outFrameSize, uint32 *outFrameWidth, uint32 *outFrameHeight);
-
+	/// <returns>Returns true, if the camera is currently running. If it has been closed, it returns false.</returns>
 	bool IsRunning() const { return m_CameraRunning; }
 
 private:

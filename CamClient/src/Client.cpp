@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#define MAX_NETWORK_READ_RETRIES 20
+
 Client::Client(const ClientConfig &config)
 	: m_Config(config), m_Camera(false, 1280, 720)
 {
@@ -78,6 +80,7 @@ void Client::NetworkLoop()
 	while (true)
 	{
 		static Byte BUF[65536];
+		static uint32 current_connection_retry = 0;
 
 		if (!m_Running && !m_SentConnectionCloseRequest)
 		{
@@ -94,6 +97,15 @@ void Client::NetworkLoop()
 		int32 len = m_Socket->Recv(BUF, sizeof(BUF), &addr);
 		if (len < 0)
 		{
+			++current_connection_retry;
+			if (current_connection_retry >= MAX_NETWORK_READ_RETRIES)
+			{
+				std::cerr << "Fatal error: Could not connect to server!" << std::endl;
+				m_Running = false;
+				m_NetworkThreadFinished = true;
+				return;
+			}
+
 			std::cerr << "Failed to receive data from network layer!" << std::endl;
 			continue;
 		}
@@ -175,7 +187,19 @@ void Client::Show()
 			break;
 		}
 
-		m_Camera.ShowLive();
+		uint32 frame_size = 0;
+		uint32 frame_width = 0;
+		uint32 frame_height = 0;
+		Byte *frame = m_Camera.ShowLive(&frame_size, &frame_width, &frame_height);
+
+		if (!frame)
+		{
+			std::cerr << "Could not read image from camera!" << std::endl;
+			continue;
+		}
+
+	//	std::cout << "Processing image... (TODO)" << std::endl;
+	//	std::cout << "Sending image to server... (TODO)" << std::endl;
 	}
 }
 

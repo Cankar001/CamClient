@@ -63,17 +63,24 @@ void Camera::Release()
 	cv::destroyAllWindows();
 }
 
-bool Camera::Show(uint32 frameIndex)
+Byte *Camera::Show(uint32 frameIndex, uint32 *out_frame_size, uint32 *out_frame_width, uint32 *out_frame_height)
 {
 	if (frameIndex >= m_ImageQueue.Size())
 	{
-		return false;
+		*out_frame_size = 0;
+		*out_frame_width = 0;
+		*out_frame_height = 0;
+		return nullptr;
 	}
 
 	cv::Mat frame = m_ImageQueue.Get(frameIndex);
 	cv::namedWindow("Frame", cv::WND_PROP_FULLSCREEN);
 	cv::setWindowProperty("Frame", cv::WND_PROP_FULLSCREEN, cv::WND_PROP_FULLSCREEN);
 	cv::imshow("Frame", frame);
+
+	*out_frame_size = sizeof(frame.data);
+	*out_frame_width = frame.cols;
+	*out_frame_height = frame.rows;
 
 	char key = cv::waitKey(1);
 	if (key == 'q')
@@ -89,16 +96,20 @@ bool Camera::Show(uint32 frameIndex)
 		ZoomOut();
 	}
 
-	return true;
+	return frame.data;
 }
 
-void Camera::ShowLive()
+Byte *Camera::ShowLive(uint32 *out_frame_size, uint32 *out_frame_width, uint32 *out_frame_height)
 {
 	cv::Mat frame = m_ImageQueue.Dequeue();
 	cv::namedWindow("Frame", cv::WND_PROP_FULLSCREEN);
 	cv::setWindowProperty("Frame", cv::WND_PROP_FULLSCREEN, cv::WND_PROP_FULLSCREEN);
 	cv::imshow("Frame", frame);
 
+	*out_frame_size = sizeof(frame.data);
+	*out_frame_width = frame.cols;
+	*out_frame_height = frame.rows;
+
 	char key = cv::waitKey(1);
 	if (key == 'q')
 	{
@@ -112,23 +123,6 @@ void Camera::ShowLive()
 	{
 		ZoomOut();
 	}
-}
-
-Byte *Camera::GetFrame(uint32 frameIndex, uint32 *outFrameSize, uint32 *outFrameWidth, uint32 *outFrameHeight)
-{
-	if (frameIndex >= m_ImageQueue.Size())
-	{
-		std::cerr << "frame index was too large! FrameIndex: " << frameIndex << ", max size: " << m_ImageQueue.Size() << std::endl;
-		*outFrameSize = 0;
-		*outFrameWidth = 0;
-		*outFrameHeight = 0;
-		return nullptr;
-	}
-
-	cv::Mat frame = m_ImageQueue.Get(frameIndex);
-	*outFrameSize = sizeof(frame.data);
-	*outFrameWidth = frame.cols;
-	*outFrameHeight = frame.rows;
 
 	return frame.data;
 }
