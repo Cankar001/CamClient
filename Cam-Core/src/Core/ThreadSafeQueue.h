@@ -76,7 +76,6 @@ namespace Core
 				if (current_index == index)
 				{
 					result = m_Queue.front();
-					break;
 				}
 
 				++current_index;
