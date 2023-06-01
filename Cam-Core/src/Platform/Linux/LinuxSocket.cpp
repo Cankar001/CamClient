@@ -10,6 +10,7 @@ namespace Core
 	LinuxSocket::LinuxSocket()
 	{
 		m_Socket = -1;
+		m_Connection = -1;
 	}
 
 	LinuxSocket::~LinuxSocket()
@@ -60,18 +61,18 @@ namespace Core
 	
 	void LinuxSocket::Close()
 	{
-		close(m_Socket);
+		close(m_Connection);
 		shutdown(m_Socket, SHUT_RDWR);
 
 		m_Socket = -1;
+		m_Connection = -1;
 	}
 	
 	bool LinuxSocket::Bind(uint16 port)
 	{
 		struct sockaddr_in address;
 		int32 addrlen = sizeof(address);
-		int32 new_socket;
-
+		
 		address.sin_family = AF_INET;
 		address.sin_addr.s_addr = INADDR_ANY;
 		address.sin_port = htons(port);
@@ -87,7 +88,7 @@ namespace Core
 			return false;
 		}
 
-		if ((new_socket = accept(m_Socket, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
+		if ((m_Connection = accept(m_Socket, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
 		{
 			return false;
 		}
@@ -97,12 +98,14 @@ namespace Core
 	
 	int32 LinuxSocket::Recv(void *dst, int32 dst_bytes, addr_t *addr)
 	{
-		return read(m_Socket, dst, dst_bytes);
+		int32 handle = m_Connection == -1 ? m_Socket : m_Connection;
+		return read(handle, dst, dst_bytes);
 	}
 	
 	int32 LinuxSocket::Send(void const *src, int32 src_bytes, addr_t addr)
 	{
-		return send(m_Socket, src, src_bytes, 0);
+		int32 handle = m_Connection == -1 ? m_Socket : m_Connection;
+		return send(handle, src, src_bytes, 0);
 	}
 	
 	bool LinuxSocket::SetNonBlocking(bool enabled)

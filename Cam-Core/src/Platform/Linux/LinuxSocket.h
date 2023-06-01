@@ -34,6 +34,7 @@ namespace Core
 	private:
 
 		int32 m_Socket = -1;
+		int32 m_Connection = -1;
 	};
 }
 
