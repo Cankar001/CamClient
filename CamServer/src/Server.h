@@ -10,19 +10,36 @@
 
 struct ServerConfig
 {
+	/// <summary>
+	/// The IP address of the server.
+	/// </summary>
 	std::string ServerIP;
+	
+	/// <summary>
+	/// The port, at which the server should listen.
+	/// </summary>
 	uint16 Port;
+
+	/// <summary>
+	/// The duration in minutes of each camera feed to be kept in memory for saving to disk after something happened.
+	/// </summary>
+	uint32 VideoBackupDuration;
 };
 
 struct ClientEntry
 {
 	Core::addr_t Address;
-	std::vector<cv::Mat> Frames;
+	Core::RingBuffer<cv::Mat> Frames;
 	std::string FrameTitle;
+
+	ClientEntry(uint32 frame_size)
+		: Frames(Core::RingBuffer<cv::Mat>(frame_size))
+	{
+	}
 
 	inline bool operator==(const ClientEntry &other) const
 	{
-		return Address.Value == other.Address.Value && Frames.size() == other.Frames.size();
+		return Address.Value == other.Address.Value && Frames.Size() == other.Frames.Size();
 	}
 
 	inline bool operator!=(const ClientEntry &other) const
@@ -32,7 +49,7 @@ struct ClientEntry
 
 	friend bool operator==(ClientEntry &lhs, const ClientEntry &rhs)
 	{
-		return lhs.Address.Value == rhs.Address.Value && lhs.Frames.size() == rhs.Frames.size();
+		return lhs.Address.Value == rhs.Address.Value && lhs.Frames.Size() == rhs.Frames.Size();
 	}
 
 	friend bool operator!=(ClientEntry &lhs, const ClientEntry &rhs)

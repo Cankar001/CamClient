@@ -21,8 +21,7 @@ Server::~Server()
 
 	for (uint32 i = 0; i < m_Frames.size(); ++i)
 	{
-		m_Frames[i].Frames.clear();
-		m_Frames[i].Frames.shrink_to_fit();
+		m_Frames[i].Frames.Clear();
 	}
 
 	m_Frames.clear();
@@ -126,9 +125,16 @@ bool Server::OnClientConnected(Core::addr_t &clientAddr, Byte *message, int32 ad
 	if (it == m_Frames.end())
 	{
 		// No client registered yet
-		ClientEntry client;
+
+		// Calculate the buffer size for X minutes
+		uint32 fps = msg->FPS;
+		uint32 minutes = m_Config.VideoBackupDuration;
+		uint32 seconds = minutes * 60;
+		uint32 frames = seconds * fps;
+		std::cout << "Calculated frame count " << frames << " for " << minutes << " minutes." << std::endl;
+
+		ClientEntry client(frames * sizeof(cv::Mat));
 		client.Address = clientAddr;
-		client.Frames = std::vector<cv::Mat>();
 		client.FrameTitle = msg->FrameName;
 		m_Frames.push_back(client);
 		client_connected = true;
@@ -160,8 +166,7 @@ bool Server::OnClientDisconnected(Core::addr_t &clientAddr, Byte *message, int32
 	if (it != m_Frames.end())
 	{
 		// Client was found, clear the entry
-		it->Frames.clear();
-		it->Frames.shrink_to_fit();
+		it->Frames.Clear();
 
 		m_Frames.erase(it);
 		client_removed = true;
@@ -197,9 +202,9 @@ bool Server::OnClientFrame(Core::addr_t &clientAddr, Byte *message, int32 addrLe
 		Byte *frame = msg->Frame.Frame;
 		cv::Mat image(cv::Size(msg->Frame.FrameWidth, msg->Frame.FrameHeight), CV_8UC1, frame, cv::Mat::AUTO_STEP);
 
-		it->Frames.push_back(image);
+		it->Frames.Push(image);
 		frame_stored = true;
-		frame_number = (uint32)it->Frames.size();
+		frame_number = (uint32)it->Frames.Size();
 	}
 
 	ServerFrameResponse response = {};
@@ -221,9 +226,9 @@ void Server::FramePreview()
 		{
 			ClientEntry &client = m_Frames[i];
 
-			for (uint32 j = 0; j < client.Frames.size(); ++j)
+			for (uint32 j = 0; j < client.Frames.Size(); ++j)
 			{
-				cv::Mat &frame = client.Frames[j];
+				cv::Mat &frame = client.Frames.Front();
 				std::string &name = client.FrameTitle;
 
 				cv::namedWindow(name.c_str(), cv::WND_PROP_FULLSCREEN);

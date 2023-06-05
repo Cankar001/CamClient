@@ -33,6 +33,7 @@ struct ClientConnectionStartMessage
 {
 	header_t Header;
 	std::string FrameName;
+	uint32 FPS;
 };
 
 struct ClientConnectionCloseMessage
