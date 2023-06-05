@@ -22,7 +22,7 @@ The project currently supports these features:
 - Server/Client system for the camera: The Server/client system has the advantage, that each camera device doesn't have to have a large drive for the videos. It sends the camera feed over a native socket implementation to the server. The server stores the video feed of each camera in a seperate ring queue, which has a configurable size. This enables the user to store the last N minutes on demand.
 - Different client types: This system currently supports two different client types. The first type is a camera client, which records each frame from a connected camera and sends the frames to the server. The second type is a display client, which gets a live feed from the server from each camera and can display the camera feed on a connected display. The system has these two different types, because not every camera might have a display connected directly to it. In this way, you can setup multiple raspberry, which are located at different locations and server different roles.
 
-# planned features
+# Planned features
 
 - face detection: planned to support face detection with the Mediapipe library from Google soon.
 - face recognition: planned to support face recognition with OpenCV soon.
