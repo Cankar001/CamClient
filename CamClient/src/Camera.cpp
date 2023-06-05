@@ -11,6 +11,9 @@ Camera::Camera(bool flipImage, uint32 width, uint32 height)
 
 	m_CameraStream.set(cv::CAP_PROP_FRAME_WIDTH, (double)m_Width);
 	m_CameraStream.set(cv::CAP_PROP_FRAME_HEIGHT, (double)m_Height);
+	m_FPS = (uint32)m_CameraStream.get(cv::CAP_PROP_FPS);
+	m_Format = (int32)m_CameraStream.get(cv::CAP_PROP_FORMAT);
+
 	std::this_thread::sleep_for(std::chrono::seconds(2));
 }
 
@@ -36,6 +39,8 @@ void Camera::GenerateFrames()
 		
 		return;
 	}
+
+	m_Format = frame.type();
 
 	if (m_FlipImage)
 	{
@@ -79,7 +84,10 @@ Byte *Camera::Show(uint32 frameIndex, uint32 *out_frame_size, uint32 *out_frame_
 	cv::setWindowProperty("Frame", cv::WND_PROP_FULLSCREEN, cv::WND_PROP_FULLSCREEN);
 	cv::imshow("Frame", frame);
 
-	*out_frame_size = sizeof(frame.data);
+	// Make the frame continuous
+	frame = frame.reshape(0, 1);
+
+	*out_frame_size = (uint32)(frame.total() * frame.elemSize());
 	*out_frame_width = frame.cols;
 	*out_frame_height = frame.rows;
 
@@ -107,7 +115,10 @@ Byte *Camera::ShowLive(uint32 *out_frame_size, uint32 *out_frame_width, uint32 *
 	cv::setWindowProperty("Frame", cv::WND_PROP_FULLSCREEN, cv::WND_PROP_FULLSCREEN);
 	cv::imshow("Frame", frame);
 
-	*out_frame_size = sizeof(frame.data);
+	// Make the frame continuous
+	frame = frame.reshape(0, 1);
+
+	*out_frame_size = (uint32)(frame.total() * frame.elemSize());
 	*out_frame_width = frame.cols;
 	*out_frame_height = frame.rows;
 

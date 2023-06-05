@@ -21,6 +21,7 @@ struct FrameData
 	uint32 FrameSize;
 	uint32 FrameWidth;
 	uint32 FrameHeight;
+	int32 Format;
 };
 
 struct header_t

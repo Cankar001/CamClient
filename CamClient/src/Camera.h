@@ -52,6 +52,18 @@ public:
 	/// <returns>Returns the current frame count.</returns>
 	uint32 GetFrameCount() const { return m_FrameCount; }
 
+	/// <summary>
+	/// Returns the current frames per second, which are configured in the camera device feed. It is set once at startup.
+	/// </summary>
+	/// <returns>Returns the current FPS.</returns>
+	uint32 GetFPS() const { return m_FPS; }
+
+	/// <summary>
+	/// Returns the current color format, gets overwritten everytime GenerateFrames() is called.
+	/// </summary>
+	/// <returns>Returns the current color format</returns>
+	uint32 GetFormat() const { return m_Format; }
+
 private:
 
 	cv::Mat Zoom(cv::Mat frame, std::pair<float, float> center);
@@ -63,6 +75,8 @@ private:
 	uint32 m_Width = 0;
 	uint32 m_Height = 0;
 	uint32 m_FrameCount = 0;
+	uint32 m_FPS = 0;
+	int32 m_Format = 0;
 	bool m_FlipImage = false;
 	float m_Scale = 1.0f;
 

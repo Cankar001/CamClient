@@ -200,11 +200,34 @@ bool Server::OnClientFrame(Core::addr_t &clientAddr, Byte *message, int32 addrLe
 	{
 		// found the client entry, store the frame
 		Byte *frame = msg->Frame.Frame;
-		cv::Mat image(cv::Size(msg->Frame.FrameWidth, msg->Frame.FrameHeight), CV_8UC1, frame, cv::Mat::AUTO_STEP);
+		if (!frame)
+		{
+			ServerFrameResponse response = {};
+			response.Header.Type = SERVER_FRAME;
+			response.Header.Version = m_Version;
+			response.FrameStored = false;
+			response.StoredFrameCount = it->Frames.Size();
+			m_Socket->Send(&response, sizeof(response), clientAddr);
+			return true;
+		}
 
+	//	cv::Mat image(cv::Size(msg->Frame.FrameWidth, msg->Frame.FrameHeight), msg->Frame.Format, frame, cv::Mat::AUTO_STEP);
+
+	//	cv::Mat image(msg->Frame.FrameHeight, msg->Frame.FrameWidth, msg->Frame.Format);
+		cv::Mat image(msg->Frame.FrameHeight, msg->Frame.FrameWidth, CV_8UC3);
+		int32 ptr = 0;
+		for (int32 i = 0; i < image.rows; i++)
+		{
+			for (int32 j = 0; j < image.cols; j++)
+			{
+				image.at<cv::Vec3b>(i, j) = cv::Vec3b(frame[ptr + 0], frame[ptr + 1], frame[ptr + 2]);
+				ptr = ptr + 3;
+			}
+		}
+		
 		it->Frames.Push(image);
 		frame_stored = true;
-		frame_number = (uint32)it->Frames.Size();
+		frame_number = it->Frames.Size();
 	}
 
 	ServerFrameResponse response = {};

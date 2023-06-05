@@ -278,16 +278,15 @@ void Client::ProcessFrame(Byte *frame, uint32 frame_size, uint32 frame_width, ui
 
 void Client::SendFrameToServer(Byte *frame, uint32 frame_size, uint32 frame_width, uint32 frame_height)
 {
-	FrameData frame_data = {};
-	frame_data.Frame = frame;
-	frame_data.FrameSize = frame_size;
-	frame_data.FrameWidth = frame_width;
-	frame_data.FrameHeight = frame_height;
-
 	ClientFrameMessage msg = {};
 	msg.Header.Type = CLIENT_FRAME;
 	msg.Header.Version = m_Version;
-	msg.Frame = frame_data;
+	msg.Frame = {};
+	msg.Frame.Frame = frame;
+	msg.Frame.FrameSize = frame_size;
+	msg.Frame.FrameWidth = frame_width;
+	msg.Frame.FrameHeight = frame_height;
+	msg.Frame.Format = m_Camera.GetFormat();
 
 	m_Socket->Send(&msg, sizeof(msg), m_Host);
 }
