@@ -260,7 +260,7 @@ bool Client::OnFrameResponse(Byte *message, uint32 length)
 	std::cout << "Trying to read back the frame response from server..." << std::endl;
 	ServerFrameResponse *msg = (ServerFrameResponse *)message;
 
-	if (!msg->FrameStored) // && msg->StoredFrameCount != m_Camera.GetFrameCount())
+	if (!msg->FrameStored && msg->StoredFrameCount != m_Camera.GetFrameCount())
 	{
 		std::cerr << "Server responded with unsuccessful frame stored!" << std::endl;
 		return false;

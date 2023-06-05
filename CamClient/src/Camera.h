@@ -46,6 +46,12 @@ public:
 	/// <returns>Returns true, if the camera is currently running. If it has been closed, it returns false.</returns>
 	bool IsRunning() const { return m_CameraRunning; }
 
+	/// <summary>
+	/// Returns the current number of frames, which are read from the camera feed.
+	/// </summary>
+	/// <returns>Returns the current frame count.</returns>
+	uint32 GetFrameCount() const { return m_FrameCount; }
+
 private:
 
 	cv::Mat Zoom(cv::Mat frame, std::pair<float, float> center);
@@ -56,6 +62,7 @@ private:
 
 	uint32 m_Width = 0;
 	uint32 m_Height = 0;
+	uint32 m_FrameCount = 0;
 	bool m_FlipImage = false;
 	float m_Scale = 1.0f;
 

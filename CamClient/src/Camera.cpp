@@ -54,6 +54,7 @@ void Camera::GenerateFrames()
 	}
 
 	m_ImageQueue.Enqueue(frame);
+	++m_FrameCount;
 }
 
 void Camera::Release()
