@@ -131,7 +131,7 @@ bool Server::OnClientConnected(Core::addr_t &clientAddr, Byte *message, int32 ad
 		uint32 minutes = m_Config.VideoBackupDuration;
 		uint32 seconds = minutes * 60;
 		uint32 frames = seconds * fps;
-		std::cout << "Calculated frame count " << frames << " for " << minutes << " minutes." << std::endl;
+		std::cout << "Calculated frame count " << frames << " for " << minutes << " minutes with " << fps << " fps." << std::endl;
 
 		ClientEntry client(frames * sizeof(cv::Mat));
 		client.Address = clientAddr;

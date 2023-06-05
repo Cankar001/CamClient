@@ -78,7 +78,7 @@ void Client::NetworkLoop()
 	msg.Header.Type = CLIENT_CONNECTION_START;
 	msg.Header.Version = m_Version;
 	msg.FrameName = "Client #1";
-	msg.FPS = 60; // TODO: read from camera feed
+	msg.FPS = 30;
 	m_Socket->Send(&msg, sizeof(msg), m_Host);
 
 	while (true)
