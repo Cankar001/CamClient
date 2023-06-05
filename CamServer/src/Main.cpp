@@ -9,6 +9,7 @@ int main(int argc, char *argv[])
 	config.Port = 45645;
 
 	Server s(config);
+	s.StartFramePreviews();
 	s.Run();
 
 	return 0;

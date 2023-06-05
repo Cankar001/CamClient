@@ -32,7 +32,7 @@ struct header_t
 struct ClientConnectionStartMessage
 {
 	header_t Header;
-
+	std::string FrameName;
 };
 
 struct ClientConnectionCloseMessage
@@ -45,25 +45,25 @@ struct ClientFrameMessage
 {
 	header_t Header;
 	FrameData Frame;
-
 };
 
 struct ServerConnectionStartResponse
 {
 	header_t Header;
-
+	bool ConnectionAccepted;
 };
 
 struct ServerConnectionCloseResponse
 {
 	header_t Header;
-
+	bool ConnectionClosed;
 };
 
 struct ServerFrameResponse
 {
 	header_t Header;
-
+	bool FrameStored;
+	uint32 StoredFrameCount;
 };
 
 #pragma pack(pop)

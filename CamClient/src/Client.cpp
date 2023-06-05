@@ -21,7 +21,7 @@ Client::Client(const ClientConfig &config)
 
 	m_Host = m_Socket->Lookup(m_Config.ServerIP, m_Config.Port);
 	m_Version = Core::utils::GetLocalVersion("../../..");
-	std::cout << "CameraClient version: " << m_Version << std::endl;
+	std::cout << "CamClient version: " << m_Version << std::endl;
 }
 
 Client::~Client()
@@ -77,6 +77,7 @@ void Client::NetworkLoop()
 	ClientConnectionStartMessage msg = {};
 	msg.Header.Type = CLIENT_CONNECTION_START;
 	msg.Header.Version = m_Version;
+	msg.FrameName = "Client #1";
 	m_Socket->Send(&msg, sizeof(msg), m_Host);
 
 	while (true)
@@ -216,7 +217,11 @@ bool Client::OnConnectionAccepted(Byte *message, uint32 length)
 	std::cout << "Trying to connect to server..." << std::endl;
 	ServerConnectionStartResponse *msg = (ServerConnectionStartResponse *)message;
 
-	// TODO
+	if (!msg->ConnectionAccepted)
+	{
+		std::cerr << "Server responded unsuccessful to connection start request!" << std::endl;
+		return false;
+	}
 
 	m_ConnectedToServer = true;
 	std::cout << "Connected to server successfully!" << std::endl;
@@ -234,7 +239,11 @@ bool Client::OnConnectionClosed(Byte *message, uint32 length)
 	std::cout << "Trying to disconnect from server..." << std::endl;
 	ServerConnectionCloseResponse *msg = (ServerConnectionCloseResponse *)message;
 
-	// TODO
+	if (!msg->ConnectionClosed)
+	{
+		std::cerr << "Server responded unsuccessful to connection close request!" << std::endl;
+		return false;
+	}
 
 	std::cout << "Disconnected from server successfully!" << std::endl;
 	return true;
@@ -251,7 +260,11 @@ bool Client::OnFrameResponse(Byte *message, uint32 length)
 	std::cout << "Trying to read back the frame response from server..." << std::endl;
 	ServerFrameResponse *msg = (ServerFrameResponse *)message;
 
-	// TODO
+	if (!msg->FrameStored) // && msg->StoredFrameCount != m_Camera.GetFrameCount())
+	{
+		std::cerr << "Server responded with unsuccessful frame stored!" << std::endl;
+		return false;
+	}
 
 	std::cout << "Read back the frame response successfully!" << std::endl;
 	return true;
