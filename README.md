@@ -18,3 +18,12 @@ cd Scripts && python Setup.py
 
 Hardware list is coming soon
 
+# Screenshots
+
+Currently I have built a very basic first prototype, including a very basic closure for the camera and for the display.
+
+In these pictures you can see the CamClient application running on a raspberry pi 3b, with the standard touch screen display from raspberry.
+
+![day-time](/Images/client_screenshot_day.jpeg?raw=true "picture from the client at day-time")
+![night-time](/Images/client_screenshot_night.jpeg?raw=true "picture from the client at night-time")
+
