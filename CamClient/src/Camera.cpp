@@ -107,6 +107,11 @@ void Camera::GenerateFrames()
 
 Byte *Camera::GetFrame(uint32 frameIndex, uint32 *out_frame_size, uint32 *out_frame_width, uint32 *out_frame_height)
 {
+	if (!out_frame_size || !out_frame_width || !out_frame_height)
+	{
+		return nullptr;
+	}
+
 	if (frameIndex >= m_ImageQueue.Size())
 	{
 		*out_frame_size = 0;
@@ -128,6 +133,11 @@ Byte *Camera::GetFrame(uint32 frameIndex, uint32 *out_frame_size, uint32 *out_fr
 
 Byte *Camera::GetCurrentFrame(uint32 *out_frame_size, uint32 *out_frame_width, uint32 *out_frame_height)
 {
+	if (!out_frame_size || !out_frame_width || !out_frame_height)
+	{
+		return nullptr;
+	}
+
 	cv::Mat frame = m_ImageQueue.Dequeue();
 
 	*out_frame_size = (uint32)(frame.total() * frame.elemSize());
@@ -148,6 +158,11 @@ void Camera::Release()
 
 Byte *Camera::Show(uint32 frameIndex, uint32 *out_frame_size, uint32 *out_frame_width, uint32 *out_frame_height)
 {
+	if (!out_frame_size || !out_frame_width || !out_frame_height)
+	{
+		return nullptr;
+	}
+
 	if (frameIndex >= m_ImageQueue.Size())
 	{
 		*out_frame_size = 0;
@@ -186,6 +201,11 @@ Byte *Camera::Show(uint32 frameIndex, uint32 *out_frame_size, uint32 *out_frame_
 
 Byte *Camera::ShowLive(uint32 *out_frame_size, uint32 *out_frame_width, uint32 *out_frame_height)
 {
+	if (!out_frame_size || !out_frame_width || !out_frame_height)
+	{
+		return nullptr;
+	}
+
 	cv::Mat frame = m_ImageQueue.Dequeue();
 
 	*out_frame_size = (uint32)(frame.total() * frame.elemSize());
