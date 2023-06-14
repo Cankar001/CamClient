@@ -31,11 +31,38 @@ Camera::~Camera()
 	Release();
 }
 
+void Camera::Invalidate()
+{
+	Release();
+
+	m_CameraRunning = true;
+	m_CameraStream = cv::VideoCapture(0);
+
+	if (m_Width == 0 || m_Height == 0)
+	{
+		// If no specific width or height is provided, use the width and the height of the camera stream.
+		m_Width = (uint32)m_CameraStream.get(cv::CAP_PROP_FRAME_WIDTH);
+		m_Height = (uint32)m_CameraStream.get(cv::CAP_PROP_FRAME_HEIGHT);
+	}
+	else
+	{
+		m_CameraStream.set(cv::CAP_PROP_FRAME_WIDTH, (double)m_Width);
+		m_CameraStream.set(cv::CAP_PROP_FRAME_HEIGHT, (double)m_Height);
+	}
+
+	m_CenterX = (float)m_Width / 2;
+	m_CenterY = (float)m_Height / 2;
+	m_Format = (int32)m_CameraStream.get(cv::CAP_PROP_FORMAT);
+
+	std::this_thread::sleep_for(std::chrono::seconds(2));
+}
+
 
 void Camera::GenerateFrames()
 {
 	cv::Mat frame;
 	static uint32 failed_retries = 0;
+	static uint32 invalidate_count = 0;
 
 	bool success = m_CameraStream.read(frame);
 	if (!success)
@@ -43,7 +70,14 @@ void Camera::GenerateFrames()
 		++failed_retries;
 		if (failed_retries >= MAX_RETRIES)
 		{
-			Release();
+			if (invalidate_count >= MAX_RETRIES)
+			{
+				Release();
+				return;
+			}
+
+			Invalidate();
+			++invalidate_count;
 		}
 		
 		return;
@@ -69,6 +103,40 @@ void Camera::GenerateFrames()
 
 	m_ImageQueue.Enqueue(frame);
 	++m_FrameCount;
+}
+
+Byte *Camera::GetFrame(uint32 frameIndex, uint32 *out_frame_size, uint32 *out_frame_width, uint32 *out_frame_height)
+{
+	if (frameIndex >= m_ImageQueue.Size())
+	{
+		*out_frame_size = 0;
+		*out_frame_width = 0;
+		*out_frame_height = 0;
+		return nullptr;
+	}
+
+	cv::Mat frame = m_ImageQueue.Get(frameIndex);
+
+	*out_frame_size = (uint32)(frame.total() * frame.elemSize());
+	*out_frame_width = frame.cols;
+	*out_frame_height = frame.rows;
+
+	Byte *frame_data = new Byte[*out_frame_size];
+	memcpy(frame_data, frame.data, *out_frame_size);
+	return frame_data;
+}
+
+Byte *Camera::GetCurrentFrame(uint32 *out_frame_size, uint32 *out_frame_width, uint32 *out_frame_height)
+{
+	cv::Mat frame = m_ImageQueue.Dequeue();
+
+	*out_frame_size = (uint32)(frame.total() * frame.elemSize());
+	*out_frame_width = frame.cols;
+	*out_frame_height = frame.rows;
+
+	Byte *frame_data = new Byte[*out_frame_size];
+	memcpy(frame_data, frame.data, *out_frame_size);
+	return frame_data;
 }
 
 void Camera::Release()

@@ -12,6 +12,11 @@ public:
 	~Camera();
 
 	/// <summary>
+	/// Tries to re-init the camera stream.
+	/// </summary>
+	void Invalidate();
+
+	/// <summary>
 	/// Frees all camera resources.
 	/// </summary>
 	void Release();
@@ -20,6 +25,25 @@ public:
 	/// Generates the most current frame. Must be called in a loop, to generate continuesly new images.
 	/// </summary>
 	void GenerateFrames();
+
+	/// <summary>
+	/// Gets a specific frame, which was captured before by GenerateFrames. Must be called in a loop, to retrieve a specific frame continuesly.
+	/// </summary>
+	/// <param name="frameIndex">The frameIndex, from which the image should be extracted.</param>
+	/// <param name="out_frame_size">The total size of the frame data in bytes.</param>
+	/// <param name="out_frame_width">The width of the resulting frame data.</param>
+	/// <param name="out_frame_height">The height of the resulting frame data.</param>
+	/// <returns>Returns the pixel data of the requested frame number if successful, otherwise nullptr. The caller is responsible for deleting the buffer when not used anymore.</returns>
+	Byte *GetFrame(uint32 frameIndex, uint32 *out_frame_size, uint32 *out_frame_width, uint32 *out_frame_height);
+
+	/// <summary>
+	/// Gets every current frame, must be called continuesly, to retrieve each current frame (aka. live video feed)
+	/// </summary>
+	/// <param name="out_frame_size">The total size of the frame data in bytes.</param>
+	/// <param name="out_frame_width">The width of the resulting frame data.</param>
+	/// <param name="out_frame_height">The height of the resulting frame data.</param>
+	/// <returns>Returns the pixel data of the most current frame if successful, otherwise nullptr. The caller is responsible for deleting the buffer when not used anymore.</returns>
+	Byte *GetCurrentFrame(uint32 *out_frame_size, uint32 *out_frame_width, uint32 *out_frame_height);
 
 	/// <summary>
 	/// Shows a specific frame, which was captured before by GenerateFrames. Must be called in a loop, to display a specific frame continuesly.
