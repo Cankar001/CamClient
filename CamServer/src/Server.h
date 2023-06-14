@@ -35,6 +35,7 @@ struct ClientEntry
 	ClientEntry(uint32 frame_size)
 		: Frames(Core::RingBuffer<cv::Mat>(frame_size))
 	{
+		Address = {};
 	}
 
 	inline bool operator==(const ClientEntry &other) const
@@ -96,7 +97,7 @@ private:
 	uint32 m_Version;
 	bool m_Running = true;
 
-	std::vector<ClientEntry> m_Frames;
+	std::vector<ClientEntry> m_Clients;
 	std::thread m_FramePreviewThread;
 };
 

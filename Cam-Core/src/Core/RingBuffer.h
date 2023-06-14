@@ -28,26 +28,35 @@ namespace Core
             operator delete(m_Data);
         }
 
-        void Push(T const &t)
+        /// <summary>
+        /// Pushes a new object into the buffer.
+        /// </summary>
+        /// <param name="value">The value to push into the ringbuffer.</param>
+        void Push(T const &value)
         {
             // ensure there's room in buffer:
             if (m_Size == m_Capacity)
                 Pop();
 
             // construct copy of object in-place into buffer
-            new(&m_Data[m_WritePos++]) T(t);
+            new(&m_Data[m_WritePos++]) T(value);
             // keep pointer in bounds.
             m_WritePos %= m_Capacity;
             ++m_Size;
         }
 
-        // return oldest object in queue:
+        /// <summary>
+        /// return oldest object in queue.
+        /// </summary>
+        /// <returns>Returns the oldest object from the queue.</returns>
         T Front()
         {
             return m_Data[m_ReadPos];
         }
 
-        // remove oldest object from queue:
+        /// <summary>
+        /// remove oldest object from queue.
+        /// </summary>
         void Pop()
         {
             // destroy the object:
@@ -65,7 +74,6 @@ namespace Core
 
         void Clear()
         {
-            // first destroy any content
             while (m_Size != 0)
                 Pop();
         }

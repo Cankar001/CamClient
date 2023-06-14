@@ -28,7 +28,7 @@ public:
 	/// <param name="out_frame_size">The total size of the frame data in bytes.</param>
 	/// <param name="out_frame_width">The width of the resulting frame data.</param>
 	/// <param name="out_frame_height">The height of the resulting frame data.</param>
-	/// <returns>Returns the pixel data of the requested frame number, if successful, otherwise nullptr.</returns>
+	/// <returns>Returns the pixel data of the requested frame number if successful, otherwise nullptr. The caller is responsible for deleting the buffer when not used anymore.</returns>
 	Byte *Show(uint32 frameIndex, uint32 *out_frame_size, uint32 *out_frame_width, uint32 *out_frame_height);
 
 	/// <summary>
@@ -37,7 +37,7 @@ public:
 	/// <param name="out_frame_size">The total size of the frame data in bytes.</param>
 	/// <param name="out_frame_width">The width of the resulting frame data.</param>
 	/// <param name="out_frame_height">The height of the resulting frame data.</param>
-	/// <returns>Returns the pixel data of the most current frame, if successful, otherwise nullptr.</returns>
+	/// <returns>Returns the pixel data of the most current frame if successful, otherwise nullptr. The caller is responsible for deleting the buffer when not used anymore.</returns>
 	Byte *ShowLive(uint32 *out_frame_size, uint32 *out_frame_width, uint32 *out_frame_height);
 
 	/// <summary>
@@ -60,8 +60,23 @@ public:
 
 private:
 
+	/// <summary>
+	/// Zooms in- or out in the current frame, calculates the view area based on the center parameter. 
+	/// Copies the Mat object into a new one, without modifying the parameter.
+	/// </summary>
+	/// <param name="frame">The frame to be used for the zoom.</param>
+	/// <param name="center">The position, where the frame should be zoomed to.</param>
+	/// <returns>Returns a new, zoomed copy of the frame.</returns>
 	cv::Mat Zoom(cv::Mat frame, std::pair<float, float> center);
+
+	/// <summary>
+	/// Sets the zoom parameter to be zoomed in for the next call of Zoom.
+	/// </summary>
 	void ZoomIn();
+
+	/// <summary>
+	/// Sets the zoom parameter to be zoomed out for the next call of Zoom.
+	/// </summary>
 	void ZoomOut();
 
 private:

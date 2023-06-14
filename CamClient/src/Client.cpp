@@ -204,6 +204,8 @@ void Client::Show()
 
 		ProcessFrame(frame, frame_size, frame_width, frame_height);
 		SendFrameToServer(frame, frame_size, frame_width, frame_height);
+
+		delete[] frame;
 	}
 }
 
@@ -288,5 +290,7 @@ void Client::SendFrameToServer(Byte *frame, uint32 frame_size, uint32 frame_widt
 	msg.Frame.FrameHeight = frame_height;
 	msg.Frame.Format = m_Camera.GetFormat();
 
-	m_Socket->Send(&msg, sizeof(msg), m_Host);
+	int32 bytesSent = m_Socket->Send(&msg, sizeof(msg), m_Host);
+	std::cout << "Sending frame with " << bytesSent << " bytes." << std::endl;
+	assert(bytesSent == sizeof(msg));
 }

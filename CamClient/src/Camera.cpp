@@ -6,11 +6,21 @@ Camera::Camera(bool flipImage, uint32 width, uint32 height)
 	: m_FlipImage(flipImage), m_Width(width), m_Height(height)
 {
 	m_CameraStream = cv::VideoCapture(0);
+
+	if (m_Width == 0 || m_Height == 0)
+	{
+		// If no specific width or height is provided, use the width and the height of the camera stream.
+		m_Width = (uint32)m_CameraStream.get(cv::CAP_PROP_FRAME_WIDTH);
+		m_Height = (uint32)m_CameraStream.get(cv::CAP_PROP_FRAME_HEIGHT);
+	}
+	else
+	{
+		m_CameraStream.set(cv::CAP_PROP_FRAME_WIDTH, (double)m_Width);
+		m_CameraStream.set(cv::CAP_PROP_FRAME_HEIGHT, (double)m_Height);
+	}
+
 	m_CenterX = (float)m_Width / 2;
 	m_CenterY = (float)m_Height / 2;
-
-	m_CameraStream.set(cv::CAP_PROP_FRAME_WIDTH, (double)m_Width);
-	m_CameraStream.set(cv::CAP_PROP_FRAME_HEIGHT, (double)m_Height);
 	m_Format = (int32)m_CameraStream.get(cv::CAP_PROP_FORMAT);
 
 	std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -25,7 +35,7 @@ Camera::~Camera()
 void Camera::GenerateFrames()
 {
 	cv::Mat frame;
-	uint32 failed_retries = 0;
+	static uint32 failed_retries = 0;
 
 	bool success = m_CameraStream.read(frame);
 	if (!success)
@@ -83,9 +93,6 @@ Byte *Camera::Show(uint32 frameIndex, uint32 *out_frame_size, uint32 *out_frame_
 	cv::setWindowProperty("Frame", cv::WND_PROP_FULLSCREEN, cv::WND_PROP_FULLSCREEN);
 	cv::imshow("Frame", frame);
 
-	// Make the frame continuous
-	frame = frame.reshape(0, 1);
-
 	*out_frame_size = (uint32)(frame.total() * frame.elemSize());
 	*out_frame_width = frame.cols;
 	*out_frame_height = frame.rows;
@@ -104,22 +111,22 @@ Byte *Camera::Show(uint32 frameIndex, uint32 *out_frame_size, uint32 *out_frame_
 		ZoomOut();
 	}
 
-	return frame.data;
+	Byte *frame_data = new Byte[*out_frame_size];
+	memcpy(frame_data, frame.data, *out_frame_size);
+	return frame_data;
 }
 
 Byte *Camera::ShowLive(uint32 *out_frame_size, uint32 *out_frame_width, uint32 *out_frame_height)
 {
 	cv::Mat frame = m_ImageQueue.Dequeue();
-	cv::namedWindow("Frame", cv::WND_PROP_FULLSCREEN);
-	cv::setWindowProperty("Frame", cv::WND_PROP_FULLSCREEN, cv::WND_PROP_FULLSCREEN);
-	cv::imshow("Frame", frame);
-
-	// Make the frame continuous
-	frame = frame.reshape(0, 1);
 
 	*out_frame_size = (uint32)(frame.total() * frame.elemSize());
 	*out_frame_width = frame.cols;
 	*out_frame_height = frame.rows;
+
+	cv::namedWindow("Frame", cv::WND_PROP_FULLSCREEN);
+	cv::setWindowProperty("Frame", cv::WND_PROP_FULLSCREEN, cv::WND_PROP_FULLSCREEN);
+	cv::imshow("Frame", frame);
 
 	char key = cv::waitKey(1);
 	if (key == 'q')
@@ -135,7 +142,9 @@ Byte *Camera::ShowLive(uint32 *out_frame_size, uint32 *out_frame_width, uint32 *
 		ZoomOut();
 	}
 
-	return frame.data;
+	Byte *frame_data = new Byte[*out_frame_size];
+	memcpy(frame_data, frame.data, *out_frame_size);
+	return frame_data;
 }
 
 cv::Mat Camera::Zoom(cv::Mat frame, std::pair<float, float> center)

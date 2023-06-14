@@ -19,13 +19,13 @@ Server::~Server()
 		m_FramePreviewThread.join();
 	}
 
-	for (uint32 i = 0; i < m_Frames.size(); ++i)
+	for (uint32 i = 0; i < m_Clients.size(); ++i)
 	{
-		m_Frames[i].Frames.Clear();
+		m_Clients[i].Frames.Clear();
 	}
 
-	m_Frames.clear();
-	m_Frames.shrink_to_fit();
+	m_Clients.clear();
+	m_Clients.shrink_to_fit();
 
 	delete m_Socket;
 	m_Socket = nullptr;
@@ -121,8 +121,8 @@ bool Server::OnClientConnected(Core::addr_t &clientAddr, Byte *message, int32 ad
 	ClientConnectionStartMessage *msg = (ClientConnectionStartMessage *)message;
 
 	bool client_connected = false;
-	auto it = std::find(m_Frames.begin(), m_Frames.end(), clientAddr);
-	if (it == m_Frames.end())
+	auto it = std::find(m_Clients.begin(), m_Clients.end(), clientAddr);
+	if (it == m_Clients.end())
 	{
 		// No client registered yet
 
@@ -136,7 +136,7 @@ bool Server::OnClientConnected(Core::addr_t &clientAddr, Byte *message, int32 ad
 		ClientEntry client(frames * sizeof(cv::Mat));
 		client.Address = clientAddr;
 		client.FrameTitle = msg->FrameName;
-		m_Frames.push_back(client);
+		m_Clients.push_back(client);
 		client_connected = true;
 	}
 
@@ -162,13 +162,13 @@ bool Server::OnClientDisconnected(Core::addr_t &clientAddr, Byte *message, int32
 	ClientConnectionCloseMessage *msg = (ClientConnectionCloseMessage *)message;
 
 	bool client_removed = false;
-	auto it = std::find(m_Frames.begin(), m_Frames.end(), clientAddr);
-	if (it != m_Frames.end())
+	auto it = std::find(m_Clients.begin(), m_Clients.end(), clientAddr);
+	if (it != m_Clients.end())
 	{
 		// Client was found, clear the entry
 		it->Frames.Clear();
 
-		m_Frames.erase(it);
+		m_Clients.erase(it);
 		client_removed = true;
 	}
 
@@ -195,8 +195,8 @@ bool Server::OnClientFrame(Core::addr_t &clientAddr, Byte *message, int32 addrLe
 
 	bool frame_stored = false;
 	uint32 frame_number = 0;
-	auto it = std::find(m_Frames.begin(), m_Frames.end(), clientAddr);
-	if (it != m_Frames.end())
+	auto it = std::find(m_Clients.begin(), m_Clients.end(), clientAddr);
+	if (it != m_Clients.end())
 	{
 		// found the client entry, store the frame
 		Byte *frame = msg->Frame.Frame;
@@ -215,13 +215,14 @@ bool Server::OnClientFrame(Core::addr_t &clientAddr, Byte *message, int32 addrLe
 
 	//	cv::Mat image(msg->Frame.FrameHeight, msg->Frame.FrameWidth, msg->Frame.Format);
 		cv::Mat image(msg->Frame.FrameHeight, msg->Frame.FrameWidth, CV_8UC3);
-		int32 ptr = 0;
+
+		int32 baseIndex = 0;
 		for (int32 i = 0; i < image.rows; i++)
 		{
 			for (int32 j = 0; j < image.cols; j++)
 			{
-				image.at<cv::Vec3b>(i, j) = cv::Vec3b(frame[ptr + 0], frame[ptr + 1], frame[ptr + 2]);
-				ptr = ptr + 3;
+				image.at<cv::Vec3b>(i, j) = cv::Vec3b(frame[baseIndex + 0], frame[baseIndex + 1], frame[baseIndex + 2]);
+				baseIndex += 3;
 			}
 		}
 		
@@ -245,9 +246,9 @@ void Server::FramePreview()
 {
 	while (m_Running)
 	{
-		for (uint32 i = 0; i < m_Frames.size(); ++i)
+		for (uint32 i = 0; i < m_Clients.size(); ++i)
 		{
-			ClientEntry &client = m_Frames[i];
+			ClientEntry &client = m_Clients[i];
 
 			for (uint32 j = 0; j < client.Frames.Size(); ++j)
 			{
