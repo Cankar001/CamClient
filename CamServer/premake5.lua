@@ -32,71 +32,16 @@ project "CamServer"
         "Cam-Core"
     }
 	
-	postbuildcommands
-	{	
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_world455d.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_text455d.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_tracking455d.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_video455d.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_videoio455d.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_face455d.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_stitching455d.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_highgui455d.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_imgproc455d.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_core455d.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_dnn455d.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_calib3d455d.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_features2d455d.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_flann455d.dll %{cfg.targetdir}"),
-
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_videoio_msmf455_64d.dll %{cfg.targetdir}"),
-			
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_world455.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_text455.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_tracking455.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_video455.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_videoio455.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_face455.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_highgui455.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_imgproc455.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_core455.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_dnn455.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_calib3d455.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_features2d455.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_flann455.dll %{cfg.targetdir}"),
-
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_videoio_msmf455_64.dll %{cfg.targetdir}"),
-		("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_videoio_ffmpeg455_64.dll %{cfg.targetdir}"),
-	}
-
-    filter "system:windows"
+	filter { "system:windows", "configurations:Debug" }
         systemversion "latest"
+		symbols "On"
 
         defines
         {
-            "CAM_PLATFORM_WINDOWS"
+            "CAM_PLATFORM_WINDOWS",
+			"CAM_DEBUG"
         }
 
-	filter "system:linux"
-		systemversion "latest"
-		
-		defines
-		{
-			"CAM_PLATFORM_LINUX"
-		}
-
-	filter "system:macos"
-		systemversion "latest"
-		
-		defines
-		{
-			"CAM_PLATFORM_MACOS"
-		}
-
-    filter "configurations:Debug"
-        defines "CAM_DEBUG"
-        symbols "On"
-		
 		links
 		{
 			"%{LibDir.opencv_world_debug}",
@@ -109,9 +54,95 @@ project "CamServer"
 			"%{LibDir.opencv_highgui_debug}",
 		}
 
-    filter "configurations:Release"
-        defines "CAM_RELEASE"
+		postbuildcommands
+		{	
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_world455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_text455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_tracking455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_video455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_videoio455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_face455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_stitching455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_highgui455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_imgproc455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_core455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_dnn455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_calib3d455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_features2d455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_flann455d.dll %{cfg.targetdir}"),
+	
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_videoio_msmf455_64d.dll %{cfg.targetdir}"),
+				
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_world455.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_text455.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_tracking455.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_video455.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_videoio455.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_face455.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_highgui455.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_imgproc455.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_core455.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_dnn455.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_calib3d455.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_features2d455.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_flann455.dll %{cfg.targetdir}"),
+	
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_videoio_msmf455_64.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_videoio_ffmpeg455_64.dll %{cfg.targetdir}"),
+		}
+
+	filter { "system:linux", "configurations:Debug" }
+		systemversion "latest"
+		symbols "On"
+		
+		defines
+		{
+			"CAM_PLATFORM_LINUX",
+			"CAM_DEBUG"
+		}
+
+		libdirs { "%{LibDir.opencv_lib_path_linux}/Debug/" }
+
+		links
+		{
+			"pthread",
+			"anl",
+			"%{LibDir.opencv_linux_core}",
+			"%{LibDir.opencv_linux_imgcodecs}",
+			"%{LibDir.opencv_linux_imgproc}",
+			"%{LibDir.opencv_linux_text}",
+			"%{LibDir.opencv_linux_tracking}",
+			"%{LibDir.opencv_linux_video}",
+			"%{LibDir.opencv_linux_videoio}",
+			"%{LibDir.opencv_linux_face}",
+			"%{LibDir.opencv_linux_stitching}",
+			"%{LibDir.opencv_linux_highgui}"
+		}
+
+	filter { "system:macos", "configurations:Debug" }
+		systemversion "latest"
+		symbols "On"
+
+		defines
+		{
+			"CAM_PLATFORM_MACOS",
+			"CAM_DEBUG"
+		}
+
+		links
+		{
+
+		}
+
+	filter { "system:windows", "configurations:Release" }
+		systemversion "latest"
         optimize "On"
+
+		defines
+		{
+			"CAM_PLATFORM_WINDOWS",
+			"CAM_RELEASE"
+		}
 
 		links
 		{
@@ -124,5 +155,84 @@ project "CamServer"
 			"%{LibDir.opencv_stitching}",
 			"%{LibDir.opencv_highgui}",
 		}
-		
-		
+
+		postbuildcommands
+		{	
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_world455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_text455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_tracking455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_video455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_videoio455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_face455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_stitching455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_highgui455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_imgproc455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_core455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_dnn455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_calib3d455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_features2d455d.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_flann455d.dll %{cfg.targetdir}"),
+	
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_videoio_msmf455_64d.dll %{cfg.targetdir}"),
+				
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_world455.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_text455.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_tracking455.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_video455.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_videoio455.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_face455.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_highgui455.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_imgproc455.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_core455.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_dnn455.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_calib3d455.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_features2d455.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_flann455.dll %{cfg.targetdir}"),
+	
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_videoio_msmf455_64.dll %{cfg.targetdir}"),
+			("{COPY} %{wks.location}CamClient/vendor/opencv/lib/opencv_videoio_ffmpeg455_64.dll %{cfg.targetdir}"),
+		}
+
+	filter { "system:linux", "configurations:Release" }
+		systemversion "latest"
+		optimize "On"
+
+		defines
+		{
+			"CAM_PLATFORM_LINUX",
+			"CAM_RELEASE"
+		}
+
+		libdirs { "%{LibDir.opencv_lib_path_linux}/Release/" }
+
+		links
+		{
+			"pthread",
+			"anl",
+			"%{LibDir.opencv_linux_core}",
+			"%{LibDir.opencv_linux_imgcodecs}",
+			"%{LibDir.opencv_linux_imgproc}",
+			"%{LibDir.opencv_linux_text}",
+			"%{LibDir.opencv_linux_tracking}",
+			"%{LibDir.opencv_linux_video}",
+			"%{LibDir.opencv_linux_videoio}",
+			"%{LibDir.opencv_linux_face}",
+			"%{LibDir.opencv_linux_stitching}",
+			"%{LibDir.opencv_linux_highgui}"
+		}
+
+	filter { "system:macos", "configurations:Release" }
+		systemversion "latest"
+		optimize "On"
+
+		defines
+		{
+			"CAM_PLATFORM_MACOS",
+			"CAM_RELEASE"
+		}
+
+		links
+		{
+
+		}
+

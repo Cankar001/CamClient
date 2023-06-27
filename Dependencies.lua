@@ -7,6 +7,8 @@ IncludeDir["miniz"]        		 = miniz_include_path
 
 LibDir = {}
 LibDir["opencv_lib_path"]        = "%{wks.location}/CamClient/vendor/opencv/lib"
+LibDir["opencv_lib_path_linux"]  = "%{wks.location}/CamClient/vendor/opencv/lib-linux"
+
 
 LibDir["opencv_world_debug"]     = "%{wks.location}/CamClient/vendor/opencv/lib/Debug/opencv_world455d.lib"
 LibDir["opencv_text_debug"]      = "%{wks.location}/CamClient/vendor/opencv/lib/Debug/opencv_text455d.lib"
@@ -26,3 +28,13 @@ LibDir["opencv_face"]            = "%{wks.location}/CamClient/vendor/opencv/lib/
 LibDir["opencv_stitching"]       = "%{wks.location}/CamClient/vendor/opencv/lib/Release/opencv_stitching455.lib"
 LibDir["opencv_highgui"]         = "%{wks.location}/CamClient/vendor/opencv/lib/Release/opencv_highgui455.lib"
 
+LibDir["opencv_linux_core"]      = "opencv_core"
+LibDir["opencv_linux_imgcodecs"] = "opencv_imgcodecs"
+LibDir["opencv_linux_imgproc"]   = "opencv_imgproc"
+LibDir["opencv_linux_text"]      = "opencv_text"
+LibDir["opencv_linux_tracking"]  = "opencv_tracking"
+LibDir["opencv_linux_video"]     = "opencv_video"
+LibDir["opencv_linux_videoio"]   = "opencv_videoio"
+LibDir["opencv_linux_face"]      = "opencv_face"
+LibDir["opencv_linux_stitching"] = "opencv_stitching"
+LibDir["opencv_linux_highgui"]   = "opencv_highgui"

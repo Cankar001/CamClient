@@ -6,7 +6,7 @@ namespace Core
 {
 	int64 QueryMS()
 	{
-
+		return 0;
 	}
 
 	void SleepMS(uint32 ms)

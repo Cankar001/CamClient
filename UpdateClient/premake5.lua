@@ -41,6 +41,15 @@ project "UpdateClient"
     filter "system:windows"
         systemversion "latest"
 
+    filter "system:linux"
+        systemversion "latest"
+
+        links
+        {
+            "pthread",
+			"anl",
+        }
+
     filter "configurations:Debug"
         defines "CAM_DEBUG"
         symbols "On"
