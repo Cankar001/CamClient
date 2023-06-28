@@ -102,6 +102,7 @@ project "CamServer"
 		}
 
 		libdirs { "%{LibDir.opencv_lib_path_linux}/Debug/" }
+		runpathdirs { "%{LibDir.opencv_lib_path_linux}/Debug/" }
 
 		links
 		{
@@ -117,6 +118,13 @@ project "CamServer"
 			"%{LibDir.opencv_linux_face}",
 			"%{LibDir.opencv_linux_stitching}",
 			"%{LibDir.opencv_linux_highgui}"
+		}
+
+		postbuildcommands
+		{
+			("{COPY} %{wks.location}/CamClient/vendor/opencv/lib-linux/Debug/libopencv_core.so.405 %{cfg.targetdir}"),
+			("{COPY} %{wks.location}/CamClient/vendor/opencv/lib-linux/Debug/libopencv_imgcodecs.so.405 %{cfg.targetdir}"),
+			("{COPY} %{wks.location}/CamClient/vendor/opencv/lib-linux/Debug/libopencv_imgproc.so.405 %{cfg.targetdir}"),
 		}
 
 	filter { "system:macos", "configurations:Debug" }
@@ -204,6 +212,7 @@ project "CamServer"
 		}
 
 		libdirs { "%{LibDir.opencv_lib_path_linux}/Release/" }
+		runpathdirs { "%{LibDir.opencv_lib_path_linux}/Release/" }
 
 		links
 		{
@@ -219,6 +228,13 @@ project "CamServer"
 			"%{LibDir.opencv_linux_face}",
 			"%{LibDir.opencv_linux_stitching}",
 			"%{LibDir.opencv_linux_highgui}"
+		}
+
+		postbuildcommands
+		{
+			("{COPY} %{wks.location}/CamClient/vendor/opencv/lib-linux/Release/libopencv_core.so.405 %{cfg.targetdir}"),
+			("{COPY} %{wks.location}/CamClient/vendor/opencv/lib-linux/Release/libopencv_imgcodecs.so.405 %{cfg.targetdir}"),
+			("{COPY} %{wks.location}/CamClient/vendor/opencv/lib-linux/Release/libopencv_imgproc.so.405 %{cfg.targetdir}"),
 		}
 
 	filter { "system:macos", "configurations:Release" }

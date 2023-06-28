@@ -24,13 +24,17 @@ ifeq ($(config),debug)
   ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
   LIBS += ../Cam-Core/bin/Debug-linux-x86_64/Cam-Core/libCam-Core.a -lpthread -lanl -lopencv_core -lopencv_imgcodecs -lopencv_imgproc -lopencv_text -lopencv_tracking -lopencv_video -lopencv_videoio -lopencv_face -lopencv_stitching -lopencv_highgui
   LDDEPS += ../Cam-Core/bin/Debug-linux-x86_64/Cam-Core/libCam-Core.a
-  ALL_LDFLAGS += $(LDFLAGS) -L../CamClient/vendor/opencv/lib-linux/Debug -L/usr/lib64 -m64
+  ALL_LDFLAGS += $(LDFLAGS) -L../CamClient/vendor/opencv/lib-linux/Debug -L/usr/lib64 -Wl,-rpath,'$$ORIGIN/../../../../CamClient/vendor/opencv/lib-linux/Debug' -m64
   LINKCMD = $(CXX) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
   define PREBUILDCMDS
   endef
   define PRELINKCMDS
   endef
   define POSTBUILDCMDS
+	@echo Running postbuild commands
+	cp -rf ../CamClient/vendor/opencv/lib-linux/Debug/libopencv_core.so.405 bin/Debug-linux-x86_64/CamDisplay
+	cp -rf ../CamClient/vendor/opencv/lib-linux/Debug/libopencv_imgcodecs.so.405 bin/Debug-linux-x86_64/CamDisplay
+	cp -rf ../CamClient/vendor/opencv/lib-linux/Debug/libopencv_imgproc.so.405 bin/Debug-linux-x86_64/CamDisplay
   endef
 all: prebuild prelink $(TARGET)
 	@:
@@ -51,13 +55,17 @@ ifeq ($(config),release)
   ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
   LIBS += ../Cam-Core/bin/Release-linux-x86_64/Cam-Core/libCam-Core.a -lpthread -lanl -lopencv_core -lopencv_imgcodecs -lopencv_imgproc -lopencv_text -lopencv_tracking -lopencv_video -lopencv_videoio -lopencv_face -lopencv_stitching -lopencv_highgui
   LDDEPS += ../Cam-Core/bin/Release-linux-x86_64/Cam-Core/libCam-Core.a
-  ALL_LDFLAGS += $(LDFLAGS) -L../CamClient/vendor/opencv/lib-linux/Release -L/usr/lib64 -m64 -s
+  ALL_LDFLAGS += $(LDFLAGS) -L../CamClient/vendor/opencv/lib-linux/Release -L/usr/lib64 -Wl,-rpath,'$$ORIGIN/../../../../CamClient/vendor/opencv/lib-linux/Release' -m64 -s
   LINKCMD = $(CXX) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
   define PREBUILDCMDS
   endef
   define PRELINKCMDS
   endef
   define POSTBUILDCMDS
+	@echo Running postbuild commands
+	cp -rf ../CamClient/vendor/opencv/lib-linux/Release/libopencv_core.so.405 bin/Release-linux-x86_64/CamDisplay
+	cp -rf ../CamClient/vendor/opencv/lib-linux/Release/libopencv_imgcodecs.so.405 bin/Release-linux-x86_64/CamDisplay
+	cp -rf ../CamClient/vendor/opencv/lib-linux/Release/libopencv_imgproc.so.405 bin/Release-linux-x86_64/CamDisplay
   endef
 all: prebuild prelink $(TARGET)
 	@:
