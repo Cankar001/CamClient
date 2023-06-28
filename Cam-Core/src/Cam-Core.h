@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Buffer.h"
+#include "Core/Base64.h"
 #include "Core/RingBuffer.h"
 #include "Core/Defines.h"
 #include "Core/Core.h"

@@ -17,7 +17,7 @@ enum MessageType : uint16
 
 struct FrameData
 {
-	Byte *Frame;
+	std::string Base64EncodedFrame;
 	uint32 FrameSize;
 	uint32 FrameWidth;
 	uint32 FrameHeight;

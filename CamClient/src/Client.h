@@ -86,7 +86,7 @@ private:
 	/// <param name="frame_size">The size of the frame in bytes.</param>
 	/// <param name="frame_width">The frame width.</param>
 	/// <param name="frame_height">The frame height.</param>
-	void ProcessFrame(Byte *frame, uint32 frame_size, uint32 frame_width, uint32 frame_height);
+	void ProcessFrame(std::vector<Byte> frame, uint32 frame_size, uint32 frame_width, uint32 frame_height);
 
 	/// <summary>
 	/// Sends the provided frame data to the connected server.
@@ -95,7 +95,7 @@ private:
 	/// <param name="frame_size">The size of the frame in bytes.</param>
 	/// <param name="frame_width">The frame width.</param>
 	/// <param name="frame_height">The frame height.</param>
-	void SendFrameToServer(Byte *frame, uint32 frame_size, uint32 frame_width, uint32 frame_height);
+	void SendFrameToServer(std::vector<Byte> frame, uint32 frame_size, uint32 frame_width, uint32 frame_height);
 
 private:
 

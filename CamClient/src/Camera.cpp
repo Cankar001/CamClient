@@ -156,11 +156,11 @@ void Camera::Release()
 	cv::destroyAllWindows();
 }
 
-Byte *Camera::Show(uint32 frameIndex, uint32 *out_frame_size, uint32 *out_frame_width, uint32 *out_frame_height)
+std::vector<Byte> Camera::Show(uint32 frameIndex, uint32 *out_frame_size, uint32 *out_frame_width, uint32 *out_frame_height)
 {
 	if (!out_frame_size || !out_frame_width || !out_frame_height)
 	{
-		return nullptr;
+		return std::vector<Byte>();
 	}
 
 	if (frameIndex >= m_ImageQueue.Size())
@@ -168,7 +168,7 @@ Byte *Camera::Show(uint32 frameIndex, uint32 *out_frame_size, uint32 *out_frame_
 		*out_frame_size = 0;
 		*out_frame_width = 0;
 		*out_frame_height = 0;
-		return nullptr;
+		return std::vector<Byte>();
 	}
 
 	cv::Mat frame = m_ImageQueue.Get(frameIndex);
@@ -194,16 +194,16 @@ Byte *Camera::Show(uint32 frameIndex, uint32 *out_frame_size, uint32 *out_frame_
 		ZoomOut();
 	}
 
-	Byte *frame_data = new Byte[*out_frame_size];
-	memcpy(frame_data, frame.data, *out_frame_size);
+	std::vector<Byte> frame_data = std::vector<Byte>(*out_frame_size / sizeof(uchar));
+	cv::imencode(".jpg", frame, frame_data);
 	return frame_data;
 }
 
-Byte *Camera::ShowLive(uint32 *out_frame_size, uint32 *out_frame_width, uint32 *out_frame_height)
+std::vector<Byte> Camera::ShowLive(uint32 *out_frame_size, uint32 *out_frame_width, uint32 *out_frame_height)
 {
 	if (!out_frame_size || !out_frame_width || !out_frame_height)
 	{
-		return nullptr;
+		return std::vector<Byte>();
 	}
 
 	cv::Mat frame = m_ImageQueue.Dequeue();
@@ -230,8 +230,8 @@ Byte *Camera::ShowLive(uint32 *out_frame_size, uint32 *out_frame_width, uint32 *
 		ZoomOut();
 	}
 
-	Byte *frame_data = new Byte[*out_frame_size];
-	memcpy(frame_data, frame.data, *out_frame_size);
+	std::vector<uchar> frame_data = std::vector<uchar>(*out_frame_size / sizeof(uchar));
+	cv::imencode(".jpg", frame, frame_data);
 	return frame_data;
 }
 

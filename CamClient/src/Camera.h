@@ -53,7 +53,7 @@ public:
 	/// <param name="out_frame_width">The width of the resulting frame data.</param>
 	/// <param name="out_frame_height">The height of the resulting frame data.</param>
 	/// <returns>Returns the pixel data of the requested frame number if successful, otherwise nullptr. The caller is responsible for deleting the buffer when not used anymore.</returns>
-	Byte *Show(uint32 frameIndex, uint32 *out_frame_size, uint32 *out_frame_width, uint32 *out_frame_height);
+	std::vector<Byte> Show(uint32 frameIndex, uint32 *out_frame_size, uint32 *out_frame_width, uint32 *out_frame_height);
 
 	/// <summary>
 	/// Shows every current frame, must be called continuesly, to display each current frame (aka. live video feed)
@@ -62,7 +62,7 @@ public:
 	/// <param name="out_frame_width">The width of the resulting frame data.</param>
 	/// <param name="out_frame_height">The height of the resulting frame data.</param>
 	/// <returns>Returns the pixel data of the most current frame if successful, otherwise nullptr. The caller is responsible for deleting the buffer when not used anymore.</returns>
-	Byte *ShowLive(uint32 *out_frame_size, uint32 *out_frame_width, uint32 *out_frame_height);
+	std::vector<Byte> ShowLive(uint32 *out_frame_size, uint32 *out_frame_width, uint32 *out_frame_height);
 
 	/// <summary>
 	/// Determines, if the camera was closed by the user or is currently running.
