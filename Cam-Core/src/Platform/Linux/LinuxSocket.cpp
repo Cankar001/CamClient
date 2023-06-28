@@ -5,9 +5,20 @@
 #include <iostream>
 #include <assert.h>
 #include <netdb.h>
+#include <netinet/in.h>
+#include <fcntl.h>
+#include <arpa/inet.h>
 
 namespace Core
 {
+	// get sockaddr, IPv4 or IPv6:
+	static void *GetInAddr(struct sockaddr *sa)
+	{
+    	if (sa->sa_family == AF_INET)
+        	return &(((struct sockaddr_in*)sa)->sin_addr);
+    	return &(((struct sockaddr_in6*)sa)->sin6_addr);
+	}
+
 	LinuxSocket::LinuxSocket()
 	{
 		m_Socket = -1;
@@ -107,11 +118,13 @@ namespace Core
 	{
 		int32 handle = m_Connection == -1 ? m_Socket : m_Connection;
 		struct sockaddr dest_addr;
-		int32 addrLen = sizeof(dest_addr);
+		socklen_t addrLen = sizeof(dest_addr);
 
 		int32 bytes_received = recvfrom(handle, dst, dst_bytes, 0, &dest_addr, &addrLen);
-		addr->Host = dest_addr.sin_addr;
-		addr->Port = dest_addr.sin_port;
+		struct sockaddr_in *dest_conn_info = (struct sockaddr_in*)GetInAddr(&dest_addr);
+
+		addr->Host = dest_conn_info->sin_addr.s_addr;
+		addr->Port = dest_conn_info->sin_port;
 		return bytes_received;
 	}
 	
@@ -122,7 +135,7 @@ namespace Core
 
 		memset(&dest_addr, 0, sizeof(dest_addr));
 		dest_addr.sin_family = AF_INET;
-		dest_addr.sin_addr = addr.Host;
+		dest_addr.sin_addr.s_addr = addr.Host;
 		dest_addr.sin_port = addr.Port;
 
 		return sendto(handle, src, src_bytes, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
@@ -130,7 +143,7 @@ namespace Core
 	
 	bool LinuxSocket::SetNonBlocking(bool enabled)
 	{
-		return fcntl(m_Socket, F_SETFL, O_NONBLOCK) != -1;
+		return fcntl(m_Socket, F_SETFL, SOCK_NONBLOCK) != -1;
 	}
 	
 	addr_t LinuxSocket::Lookup(const std::string &host, uint16 port)
@@ -142,7 +155,7 @@ namespace Core
 
 		addr_t addr = {};
 
-		reqs[0] = malloc(sizeof(*reqs[0]));
+		reqs[0] = (gaicb*)malloc(sizeof(*reqs[0]));
 		memset(reqs[0], 0, sizeof(*reqs[0]));
 		reqs[0]->ar_name = host.c_str();
 
@@ -167,7 +180,15 @@ namespace Core
 				return {};
 			}
 
-			addr.Host = hbuf;
+    		sockaddr_in addr4 = {};
+			if (inet_pton(AF_INET, hbuf, (void*)(&addr4)) < 1)
+			{
+				free(reqs[0]);
+				reqs[0] = NULL;
+				return {};
+			}
+
+			addr.Host = addr4.sin_addr.s_addr;
 			addr.Port = port;
 		}
 

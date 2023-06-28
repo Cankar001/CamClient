@@ -1,5 +1,7 @@
 #include "Camera.h"
 
+#include <thread>
+
 #define MAX_RETRIES 5
 
 Camera::Camera(bool flipImage, uint32 width, uint32 height)

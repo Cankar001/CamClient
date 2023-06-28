@@ -3,6 +3,10 @@
 #include "Core/Hash.h"
 #include "Utils/Utils.h"
 
+#ifdef CAM_PLATFORM_LINUX
+#include <cstring>
+#endif
+
 namespace Core
 {
 	bool Clients::Node::IsBandwidthAvailable(int64 now_ms)

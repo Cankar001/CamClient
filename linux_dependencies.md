@@ -1,0 +1,3 @@
+- pkg-config
+- libgtk2.0-dev
+- 

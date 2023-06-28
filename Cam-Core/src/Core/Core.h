@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Defines.h"
+#include <memory>
 
 using Byte = unsigned char;
 
@@ -9,14 +10,14 @@ typedef unsigned char uint8;		// 8-bit  unsigned
 typedef unsigned short uint16;		// 16-bit unsigned
 typedef unsigned int uint32;		// 32-bit unsigned
 typedef unsigned long ULONG;		// 32-Bit unsigned
-typedef unsigned long long uint64;  // 64-bit unsigned
+typedef uint64_t uint64;  // 64-bit unsigned
 
 // Signed base types
 typedef signed char int8;			// 8-bit  signed
 typedef signed short int16;			// 16-bit signed
 typedef signed int int32;			// 32-bit signed
 typedef signed long LONG;			// 32-bit signed
-typedef signed long long int64;		// 64-bit signed
+typedef int64_t int64;		// 64-bit signed
 
 // Pointer size
 typedef uint64 uintptr;

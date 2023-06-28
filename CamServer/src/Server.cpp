@@ -241,7 +241,7 @@ void Server::FramePreview()
 
 			for (uint32 j = 0; j < client.Frames.Size(); ++j)
 			{
-				cv::Mat &frame = client.Frames.Front();
+				cv::Mat frame = client.Frames.Front();
 				std::string &name = client.FrameTitle;
 
 				cv::namedWindow(name.c_str(), cv::WND_PROP_FULLSCREEN);
