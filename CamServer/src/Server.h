@@ -31,6 +31,8 @@ struct ClientEntry
 	Core::addr_t Address;
 	Core::RingBuffer<cv::Mat> Frames;
 	std::string FrameTitle;
+	uint32 FrameWidth;
+	uint32 FrameHeight;
 
 	ClientEntry(uint32 frame_size)
 		: Frames(Core::RingBuffer<cv::Mat>(frame_size))

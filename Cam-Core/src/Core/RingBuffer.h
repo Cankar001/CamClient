@@ -2,6 +2,8 @@
 
 #include "Core.h"
 
+#include <assert.h>
+
 namespace Core
 {
     template <class T>
@@ -76,6 +78,18 @@ namespace Core
         {
             while (m_Size != 0)
                 Pop();
+        }
+
+        T &operator[](uint32 index)
+        {
+            assert(index < m_Size);
+            return m_Data[index];
+        }
+
+        const T &operator[](uint32 index) const
+        {
+            assert(index < m_Size);
+            return m_Data[index];
         }
 
     private:

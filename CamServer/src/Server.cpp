@@ -198,23 +198,33 @@ bool Server::OnClientFrame(Core::addr_t &clientAddr, Byte *message, int32 addrLe
 	auto it = std::find(m_Clients.begin(), m_Clients.end(), clientAddr);
 	if (it != m_Clients.end())
 	{
-		// found the client entry, store the frame
-		Byte *frame = msg->Frame.Frame;
-		if (!frame)
-		{
-			ServerFrameResponse response = {};
-			response.Header.Type = SERVER_FRAME;
-			response.Header.Version = m_Version;
-			response.FrameStored = false;
-			response.StoredFrameCount = it->Frames.Size();
-			m_Socket->Send(&response, sizeof(response), clientAddr);
-			return true;
-		}
+		Byte *frame = new Byte[msg->Frame.FrameSize];
+		uint32 frame_size = msg->Frame.FrameSize;
 
-	//	cv::Mat image(cv::Size(msg->Frame.FrameWidth, msg->Frame.FrameHeight), msg->Frame.Format, frame, cv::Mat::AUTO_STEP);
+		Core::addr_t current_client;
+		int32 bytes_received = m_Socket->Recv(frame, frame_size, &current_client);
+		
+		it->FrameWidth = msg->Frame.FrameWidth;
+		it->FrameHeight = msg->Frame.FrameHeight;
+
+	//	uint32 offset = 0;
+	//	while (bytes_received != frame_size)
+	//	{
+	//		if (offset >= frame_size)
+	//			break;
+	//
+	//		Core::addr_t current_client;
+	//		uint32 new_size = frame_size - bytes_received;
+	//		int32 bytes_received = m_Socket->Recv(frame + offset, new_size, &current_client);
+	//		offset += bytes_received;
+	//	}
+
+	//	assert(frame_size == bytes_received);
+
+		cv::Mat image(cv::Size(msg->Frame.FrameWidth, msg->Frame.FrameHeight), msg->Frame.Format, frame, cv::Mat::AUTO_STEP);
 
 	//	cv::Mat image(msg->Frame.FrameHeight, msg->Frame.FrameWidth, msg->Frame.Format);
-		cv::Mat image(msg->Frame.FrameHeight, msg->Frame.FrameWidth, CV_8UC3);
+	//	cv::Mat image(msg->Frame.FrameHeight, msg->Frame.FrameWidth, CV_8UC3);
 
 		int32 baseIndex = 0;
 		for (int32 i = 0; i < image.rows; i++)
@@ -252,8 +262,10 @@ void Server::FramePreview()
 
 			for (uint32 j = 0; j < client.Frames.Size(); ++j)
 			{
-				cv::Mat frame = client.Frames.Front();
+				cv::Mat frame = client.Frames[j];
 				std::string &name = client.FrameTitle;
+				uint32 frame_width = client.FrameWidth;
+				uint32 frmae_height = client.FrameHeight;
 
 				cv::namedWindow(name.c_str(), cv::WND_PROP_FULLSCREEN);
 				cv::setWindowProperty(name.c_str(), cv::WND_PROP_FULLSCREEN, cv::WND_PROP_FULLSCREEN);
