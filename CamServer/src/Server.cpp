@@ -2,8 +2,6 @@
 
 #include <iostream>
 
-#include <opencv2/opencv.hpp>
-
 #include "Messages.h"
 
 Server::Server(const ServerConfig &config)
@@ -201,19 +199,32 @@ bool Server::OnClientFrame(Core::addr_t &clientAddr, Byte *message, int32 addrLe
 	if (it != m_Clients.end())
 	{
 		// found the client entry, store the frame
-		std::string encoded_frame = msg->Frame.Base64EncodedFrame;
-		std::vector<Byte> data(encoded_frame.begin(), encoded_frame.end());
-		cv::Mat image = cv::imdecode(cv::Mat(data), 1);
+		Byte *frame = msg->Frame.Frame;
+		if (!frame)
+		{
+			ServerFrameResponse response = {};
+			response.Header.Type = SERVER_FRAME;
+			response.Header.Version = m_Version;
+			response.FrameStored = false;
+			response.StoredFrameCount = it->Frames.Size();
+			m_Socket->Send(&response, sizeof(response), clientAddr);
+			return true;
+		}
 
-	//	int32 baseIndex = 0;
-	//	for (int32 i = 0; i < image.rows; i++)
-	//	{
-	//		for (int32 j = 0; j < image.cols; j++)
-	//		{
-	//			image.at<cv::Vec3b>(i, j) = cv::Vec3b(frame[baseIndex + 0], frame[baseIndex + 1], frame[baseIndex + 2]);
-	//			baseIndex += 3;
-	//		}
-	//	}
+	//	cv::Mat image(cv::Size(msg->Frame.FrameWidth, msg->Frame.FrameHeight), msg->Frame.Format, frame, cv::Mat::AUTO_STEP);
+
+	//	cv::Mat image(msg->Frame.FrameHeight, msg->Frame.FrameWidth, msg->Frame.Format);
+		cv::Mat image(msg->Frame.FrameHeight, msg->Frame.FrameWidth, CV_8UC3);
+
+		int32 baseIndex = 0;
+		for (int32 i = 0; i < image.rows; i++)
+		{
+			for (int32 j = 0; j < image.cols; j++)
+			{
+				image.at<cv::Vec3b>(i, j) = cv::Vec3b(frame[baseIndex + 0], frame[baseIndex + 1], frame[baseIndex + 2]);
+				baseIndex += 3;
+			}
+		}
 		
 		it->Frames.Push(image);
 		frame_stored = true;

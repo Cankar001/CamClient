@@ -194,9 +194,9 @@ void Client::Show()
 		uint32 frame_size = 0;
 		uint32 frame_width = 0;
 		uint32 frame_height = 0;
-		std::vector<Byte> frame = m_Camera.ShowLive(&frame_size, &frame_width, &frame_height);
+		Byte *frame = m_Camera.ShowLive(&frame_size, &frame_width, &frame_height);
 
-		if (!frame.size())
+		if (!frame)
 		{
 			std::cerr << "Could not read image from camera!" << std::endl;
 			continue;
@@ -204,6 +204,8 @@ void Client::Show()
 
 		ProcessFrame(frame, frame_size, frame_width, frame_height);
 		SendFrameToServer(frame, frame_size, frame_width, frame_height);
+
+		delete[] frame;
 	}
 }
 
@@ -271,20 +273,18 @@ bool Client::OnFrameResponse(Byte *message, uint32 length)
 	return true;
 }
 
-void Client::ProcessFrame(std::vector<Byte> frame, uint32 frame_size, uint32 frame_width, uint32 frame_height)
+void Client::ProcessFrame(Byte *frame, uint32 frame_size, uint32 frame_width, uint32 frame_height)
 {
 	// TODO
 }
 
-void Client::SendFrameToServer(std::vector<Byte> frame, uint32 frame_size, uint32 frame_width, uint32 frame_height)
+void Client::SendFrameToServer(Byte *frame, uint32 frame_size, uint32 frame_width, uint32 frame_height)
 {
-	std::string encoded_frame = Core::Base64Encode(frame.data(), (uint32)(frame.size() * sizeof(Byte)));
-
 	ClientFrameMessage msg = {};
 	msg.Header.Type = CLIENT_FRAME;
 	msg.Header.Version = m_Version;
 	msg.Frame = {};
-	msg.Frame.Base64EncodedFrame = encoded_frame;
+	msg.Frame.Frame = frame;
 	msg.Frame.FrameSize = frame_size;
 	msg.Frame.FrameWidth = frame_width;
 	msg.Frame.FrameHeight = frame_height;
