@@ -109,9 +109,20 @@ void Client::NetworkLoop()
 				m_NetworkThreadFinished = true;
 				return;
 			}
+			else if (current_connection_retry >= 100 * MAX_NETWORK_READ_RETRIES && m_ConnectedToServer)
+			{
+				std::cerr << "Fatal error: Lost connection to server!" << std::endl;
+				m_Running = false;
+				m_NetworkThreadFinished = true;
+				return;
+			}
 
 			std::cerr << "Failed to receive data from network layer!" << std::endl;
 			continue;
+		}
+		else
+		{
+			current_connection_retry = 0;
 		}
 
 		// ignore all messages from unknown senders
@@ -290,8 +301,10 @@ void Client::SendFrameToServer(Byte *frame, uint32 frame_size, uint32 frame_widt
 	msg.Frame.Format = m_Camera.GetFormat();
 
 	int32 bytesSent = m_Socket->Send(&msg, sizeof(msg), m_Host);
-	std::cout << "Sending frame with " << sizeof(msg) << " bytes." << std::endl;
+	std::cout << "Sending frame with " << sizeof(msg) << " bytes. Actual message size: " << bytesSent << std::endl;
 
-	bytesSent = m_Socket->Send(frame, frame_size, m_Host);
-	std::cout << "Sending frame data with " << sizeof(frame) << " bytes." << std::endl;
+	//std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+	bytesSent = m_Socket->SendLarge(frame, frame_size, m_Host);
+	std::cout << "Sending frame data with " << frame_size << " bytes. Actual message size: " << bytesSent << std::endl;
 }

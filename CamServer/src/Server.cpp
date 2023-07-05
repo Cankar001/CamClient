@@ -84,12 +84,6 @@ bool Server::Step()
 	}
 
 	header_t *header = (header_t *)BUF;
-	if (header->Version != m_Version)
-	{
-		std::cerr << "Version did not match with server version!" << std::endl;
-		return false;
-	}
-
 	bool message_success = false;
 	switch (header->Type)
 	{
@@ -111,6 +105,13 @@ bool Server::Step()
 
 bool Server::OnClientConnected(Core::addr_t &clientAddr, Byte *message, int32 addrLen)
 {
+	header_t *header = (header_t *)message;
+	if (header->Version != m_Version)
+	{
+		std::cerr << "Version did not match with server version!" << std::endl;
+		return false;
+	}
+
 	if (addrLen != sizeof(ClientConnectionStartMessage))
 	{
 		std::cerr << "Request size was not as expected!" << std::endl;
@@ -152,6 +153,13 @@ bool Server::OnClientConnected(Core::addr_t &clientAddr, Byte *message, int32 ad
 
 bool Server::OnClientDisconnected(Core::addr_t &clientAddr, Byte *message, int32 addrLen)
 {
+	header_t *header = (header_t *)message;
+	if (header->Version != m_Version)
+	{
+		std::cerr << "Version did not match with server version!" << std::endl;
+		return false;
+	}
+
 	if (addrLen != sizeof(ClientConnectionCloseMessage))
 	{
 		std::cerr << "Request size was not as expected!" << std::endl;
@@ -184,6 +192,13 @@ bool Server::OnClientDisconnected(Core::addr_t &clientAddr, Byte *message, int32
 
 bool Server::OnClientFrame(Core::addr_t &clientAddr, Byte *message, int32 addrLen)
 {
+	header_t *header = (header_t *)message;
+	if (header->Version != m_Version)
+	{
+		std::cerr << "Version did not match with server version!" << std::endl;
+		return false;
+	}
+
 	if (addrLen != sizeof(ClientFrameMessage))
 	{
 		std::cerr << "Request size was not as expected!" << std::endl;
@@ -202,24 +217,11 @@ bool Server::OnClientFrame(Core::addr_t &clientAddr, Byte *message, int32 addrLe
 		uint32 frame_size = msg->Frame.FrameSize;
 
 		Core::addr_t current_client;
-		int32 bytes_received = m_Socket->Recv(frame, frame_size, &current_client);
+		int32 bytes_received = m_Socket->RecvLarge(frame, frame_size, &current_client);
+	//	assert(frame_size == bytes_received);
 		
 		it->FrameWidth = msg->Frame.FrameWidth;
 		it->FrameHeight = msg->Frame.FrameHeight;
-
-	//	uint32 offset = 0;
-	//	while (bytes_received != frame_size)
-	//	{
-	//		if (offset >= frame_size)
-	//			break;
-	//
-	//		Core::addr_t current_client;
-	//		uint32 new_size = frame_size - bytes_received;
-	//		int32 bytes_received = m_Socket->Recv(frame + offset, new_size, &current_client);
-	//		offset += bytes_received;
-	//	}
-
-	//	assert(frame_size == bytes_received);
 
 		cv::Mat image(cv::Size(msg->Frame.FrameWidth, msg->Frame.FrameHeight), msg->Frame.Format, frame, cv::Mat::AUTO_STEP);
 
@@ -262,7 +264,7 @@ void Server::FramePreview()
 
 			for (uint32 j = 0; j < client.Frames.Size(); ++j)
 			{
-				cv::Mat frame = client.Frames[j];
+				cv::Mat frame = client.Frames.Front();
 				std::string &name = client.FrameTitle;
 				uint32 frame_width = client.FrameWidth;
 				uint32 frmae_height = client.FrameHeight;

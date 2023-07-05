@@ -27,7 +27,11 @@ namespace Core
                 Pop();
 
             // then release the buffer.
-            operator delete(m_Data);
+            if (m_Data)
+            {
+                operator delete(m_Data);
+                m_Data = nullptr;
+            }
         }
 
         /// <summary>
@@ -41,7 +45,10 @@ namespace Core
                 Pop();
 
             // construct copy of object in-place into buffer
-            new(&m_Data[m_WritePos++]) T(value);
+            new(&m_Data[m_WritePos]) T(value);
+
+            ++m_WritePos;
+
             // keep pointer in bounds.
             m_WritePos %= m_Capacity;
             ++m_Size;
@@ -72,6 +79,26 @@ namespace Core
         uint32 Size() const
         {
             return m_Size;
+        }
+
+        RingBuffer<T> Copy()
+        {
+            RingBuffer<T> copy(m_Capacity);
+
+            while (m_Size != 0)
+            {
+                copy.Push(Front());
+                Pop();
+            }
+
+            // then release the buffer.
+            if (m_Data)
+            {
+                operator delete(m_Data);
+                m_Data = nullptr;
+            }
+            
+            return copy;
         }
 
         void Clear()
