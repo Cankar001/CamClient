@@ -11,7 +11,7 @@ git clone https://github.com/Cankar001/CamClient.git
 
 ## Generate the visual studio solution or makefiles
 ```shell
-cd Scripts && python Setup.py
+python Setup.py
 ```
 
 # Features
