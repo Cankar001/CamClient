@@ -8,8 +8,19 @@ Server::Server(const ServerConfig &config)
 	: m_Config(config)
 {
 	m_Socket = Core::Socket::Create();
-	m_Version = Core::utils::GetLocalVersion("../../..");
-	std::cout << "CamServer version: " << m_Version << std::endl;
+
+	std::string cwd = "";
+	bool cwd_success = Core::FileSystem::Get()->GetCurrentWorkingDirectory(&cwd);
+	if (cwd_success)
+	{
+		m_Version = Core::utils::GetLocalVersion(cwd);
+		std::cout << "CamServer version: " << m_Version << std::endl;
+	}
+	else
+	{
+		m_Version = 100; // Set the default version
+		std::cout << "CamServer version: " << m_Version << std::endl;
+	}
 }
 
 Server::~Server()

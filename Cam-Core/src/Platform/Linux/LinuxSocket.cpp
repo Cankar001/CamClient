@@ -140,6 +140,88 @@ namespace Core
 
 		return sendto(handle, src, src_bytes, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
 	}
+
+	int32 LinuxSocket::SendLarge(void const *src, int32 src_bytes, addr_t addr)
+	{
+		int32 send_pos = 0;
+		int32 buffer_size = 256;
+		int32 bytes_left = src_bytes;
+		int32 n = -1;
+		
+		int32 handle = m_Connection == -1 ? m_Socket : m_Connection;
+		struct sockaddr_in dest_addr;
+
+		memset(&dest_addr, 0, sizeof(dest_addr));
+		dest_addr.sin_family = AF_INET;
+		dest_addr.sin_addr.s_addr = addr.Host;
+		dest_addr.sin_port = addr.Port;
+
+		while (send_pos < src_bytes)
+		{
+			int32 chunk_size = bytes_left > buffer_size ? buffer_size : bytes_left;
+			n = sendto(handle, src + send_pos, chunk_size, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+
+			if (-1 == n)
+			{
+				break;
+			}
+
+			if (n != chunk_size)
+			{
+				// if less bytes were send, increase/decrease only by that amount
+				chunk_size = n;
+			}
+
+			send_pos += chunk_size;
+			bytes_left -= chunk_size;
+		}
+
+		return send_pos == src_bytes ? send_pos : -1;
+	}
+
+	int32 LinuxSocket::RecvLarge(void *dst, int32 dst_bytes, addr_t *addr)
+	{
+		assert(dst);
+		assert(dst_bytes);
+		assert(addr);
+
+		int32 handle = m_Connection == -1 ? m_Socket : m_Connection;
+		struct sockaddr dest_addr;
+		socklen_t addrLen = sizeof(dest_addr);
+
+		int32 buffer_size = 256;
+		int32 read_pos = 0;
+		int32 bytes_received = 0;
+		
+		while (bytes_received != dst_bytes)
+		{
+			if (read_pos >= dst_bytes)
+			{
+				break;
+			}
+	
+			uint32 chunk_size = dst_bytes > buffer_size ? buffer_size : dst_bytes;
+			bytes_received = recvfrom(handle, dst + read_pos, chunk_size, 0, &dest_addr, &addrLen);
+
+			if (bytes_received == -1)
+			{
+				break;
+			}
+			
+			if (chunk_size != bytes_received)
+			{
+				chunk_size = bytes_received;
+			}
+
+			read_pos += chunk_size;
+
+			struct sockaddr_in *dest_conn_info = (struct sockaddr_in*)GetInAddr(&dest_addr);
+			addr->Host = dest_conn_info->sin_addr.s_addr;
+			addr->Port = dest_conn_info->sin_port;
+		}
+
+		return bytes_received == dst_bytes ? bytes_received : -1;
+	}
 	
 	bool LinuxSocket::SetNonBlocking(bool enabled)
 	{
