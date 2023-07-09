@@ -18,6 +18,17 @@ namespace Core
 
 	int64 FileSystem::Size(const std::string &filePath)
 	{
+		FILE *f = fopen(filePath.c_str(), "r");
+		if (f)
+		{
+			fseek(f, 0, SEEK_END);
+			int64 length = ftell(f);
+			fseek(f, 0, SEEK_SET);
+
+			fclose(f);
+			return length;
+		}
+
 		return 0;
 	}
 
@@ -57,11 +68,18 @@ namespace Core
 
 	bool FileSystem::WriteTextFile(const std::string &filePath, const std::string &str)
 	{
-		return false;
+		return WriteFile(filePath, (void*)&str[0], (uint32)str.size());
 	}
 
 	bool FileSystem::WriteFile(const std::string &filePath, void *src, uint32 bytes)
 	{
+		FILE *f = fopen(filePath.c_str(), "wb");
+		if (f)
+		{
+
+			fclose(f);
+		}
+
 		return false;
 	}
 
