@@ -82,6 +82,8 @@ public:
 	/// <returns>Returns the current color format</returns>
 	uint32 GetFormat() const { return m_Format; }
 
+	void AcquireNextImage();
+
 private:
 
 	/// <summary>

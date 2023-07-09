@@ -30,7 +30,7 @@ namespace Core
 			m_Conditional.notify_one();
 		}
 
-		T Dequeue()
+		void Dequeue()
 		{
 			std::unique_lock<std::mutex> lock(m_Mutex);
 			while (m_Queue.empty())
@@ -38,13 +38,14 @@ namespace Core
 				m_Conditional.wait(lock);
 			}
 
-			T value = m_Queue.front();
+			T &value = m_Queue.front();
+			value.~T();
+
 			m_Queue.pop();
 			m_Size--;
-			return value;
 		}
 
-		T Front()
+		T &Front()
 		{
 			std::unique_lock<std::mutex> lock(m_Mutex);
 			while (m_Queue.empty())

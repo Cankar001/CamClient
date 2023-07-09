@@ -49,7 +49,9 @@ namespace PythonCamera
 	{
 		while (true)
 		{
-			cv::Mat frame = m_StreamQueue.Dequeue();
+			cv::Mat &frame = m_StreamQueue.Front();
+			m_StreamQueue.Dequeue();
+
 			cv::namedWindow("Frame", cv::WND_PROP_FULLSCREEN);
 			cv::setWindowProperty("Frame", cv::WND_PROP_FULLSCREEN, cv::WND_PROP_FULLSCREEN);
 			cv::imshow("Frame", frame);

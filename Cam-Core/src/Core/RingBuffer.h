@@ -63,6 +63,19 @@ namespace Core
             return m_Data[m_ReadPos];
         }
 
+        void AdvanceReadPosition()
+        {
+            if (m_ReadPos >= m_Size)
+            {
+                m_ReadPos = m_Size;
+            }
+            else
+            {
+                m_ReadPos++;
+                m_ReadPos %= m_Capacity;
+            }
+        }
+
         /// <summary>
         /// remove oldest object from queue.
         /// </summary>
@@ -89,13 +102,6 @@ namespace Core
             {
                 copy.Push(Front());
                 Pop();
-            }
-
-            // then release the buffer.
-            if (m_Data)
-            {
-                operator delete(m_Data);
-                m_Data = nullptr;
             }
             
             return copy;

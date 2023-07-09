@@ -46,29 +46,21 @@ void Server::Run()
 {
 	m_Running = true;
 
+	m_Socket->Open();
+	if (!m_Socket->Bind(m_Config.Port))
+	{
+		std::cerr << "Could not bind socket" << std::endl;
+	}
+
 	for (;;)
 	{
-		m_Socket->Open();
-
-		if (!m_Socket->Bind(m_Config.Port))
+		if (!Step())
 		{
-			std::cerr << "Could not bind socket" << std::endl;
 			break;
 		}
-
-		for (;;)
-		{
-			if (!Step())
-			{
-				break;
-			}
-		}
-
-		std::cerr << "error: network interface failure." << std::endl;
-		m_Socket->Close();
-
-		Core::SleepMS(2000);
 	}
+	
+	m_Socket->Close();
 
 	m_Running = false;
 }
@@ -86,6 +78,7 @@ bool Server::Step()
 	int32 len = m_Socket->Recv(BUF, sizeof(BUF), &addr);
 	if (len < 0)
 	{
+		std::cerr << "Could not receive package from client" << std::endl;
 		return false;
 	}
 
@@ -96,18 +89,37 @@ bool Server::Step()
 
 	header_t *header = (header_t *)BUF;
 	bool message_success = false;
+	//std::cout << "Trying type " << header->Type << std::endl;
 	switch (header->Type)
 	{
+		// this is valid for now, because the frame data does not have a header.
+		case NONE:
+		default:
+			message_success = true;
+			break;
+
 		case CLIENT_CONNECTION_START:
 			message_success = OnClientConnected(addr, BUF, len);
+			if (!message_success)
+			{
+				std::cerr << "client connection failed." << std::endl;
+			}
 			break;
 
 		case CLIENT_CONNECTION_CLOSE:
 			message_success = OnClientDisconnected(addr, BUF, len);
+			if (!message_success)
+			{
+				std::cerr << "client disconnection failed." << std::endl;
+			}
 			break;
 
 		case CLIENT_FRAME:
 			message_success = OnClientFrame(addr, BUF, len);
+			if (!message_success)
+			{
+				std::cerr << "client frame failed." << std::endl;
+			}
 			break;
 	}
 
@@ -276,6 +288,8 @@ void Server::FramePreview()
 			for (uint32 j = 0; j < client.Frames.Size(); ++j)
 			{
 				cv::Mat frame = client.Frames.Front();
+			//	client.Frames.AdvanceReadPosition();
+
 				std::string &name = client.FrameTitle;
 				uint32 frame_width = client.FrameWidth;
 				uint32 frmae_height = client.FrameHeight;

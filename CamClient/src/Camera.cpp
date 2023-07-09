@@ -140,15 +140,15 @@ Byte *Camera::GetCurrentFrame(uint32 *out_frame_size, uint32 *out_frame_width, u
 		return nullptr;
 	}
 
-	cv::Mat frame = m_ImageQueue.Dequeue();
+	cv::Mat &frame = m_ImageQueue.Front();
 
 	*out_frame_size = (uint32)(frame.total() * frame.elemSize());
 	*out_frame_width = frame.cols;
 	*out_frame_height = frame.rows;
 
-	Byte *frame_data = new Byte[*out_frame_size];
-	memcpy(frame_data, frame.data, *out_frame_size);
-	return frame_data;
+	//Byte *frame_data = new Byte[*out_frame_size];
+	//memcpy(frame_data, frame.data, *out_frame_size);
+	return frame.data;
 }
 
 void Camera::Release()
@@ -208,7 +208,7 @@ Byte *Camera::ShowLive(uint32 *out_frame_size, uint32 *out_frame_width, uint32 *
 		return nullptr;
 	}
 
-	cv::Mat frame = m_ImageQueue.Dequeue();
+	cv::Mat &frame = m_ImageQueue.Front();
 
 	*out_frame_size = (uint32)(frame.total() * frame.elemSize());
 	*out_frame_width = frame.cols;
@@ -232,9 +232,14 @@ Byte *Camera::ShowLive(uint32 *out_frame_size, uint32 *out_frame_width, uint32 *
 		ZoomOut();
 	}
 
-	Byte *frame_data = new Byte[*out_frame_size];
-	memcpy(frame_data, frame.data, *out_frame_size);
-	return frame_data;
+	//Byte *frame_data = new Byte[*out_frame_size];
+	//memcpy(frame_data, frame.data, *out_frame_size);
+	return frame.data;
+}
+
+void Camera::AcquireNextImage()
+{
+	m_ImageQueue.Dequeue();
 }
 
 cv::Mat Camera::Zoom(cv::Mat frame, std::pair<float, float> center)

@@ -213,10 +213,12 @@ void Client::Show()
 			continue;
 		}
 
-		ProcessFrame(frame, frame_size, frame_width, frame_height);
-		SendFrameToServer(frame, frame_size, frame_width, frame_height);
+	//	ProcessFrame(frame, frame_size, frame_width, frame_height);
+	//	SendFrameToServer(frame, frame_size, frame_width, frame_height);
 
-		delete[] frame;
+		m_Camera.AcquireNextImage();
+
+	//	delete[] frame;
 	}
 }
 

@@ -33,11 +33,36 @@ struct ClientEntry
 	std::string FrameTitle;
 	uint32 FrameWidth;
 	uint32 FrameHeight;
+	uint32 FrameBufferSize;
 
-	ClientEntry(uint32 frame_size)
-		: Frames(Core::RingBuffer<cv::Mat>(frame_size))
+	ClientEntry(uint32 frameBufferSize)
+		: Frames(Core::RingBuffer<cv::Mat>(frameBufferSize))
 	{
 		Address = {};
+		FrameBufferSize = frameBufferSize;
+		FrameWidth = 0;
+		FrameHeight = 0;
+	}
+
+	ClientEntry(const ClientEntry &other)
+		: Frames(Core::RingBuffer<cv::Mat>(other.FrameBufferSize))
+	{
+		Address = other.Address;
+		FrameBufferSize = other.FrameBufferSize;
+		FrameWidth = other.FrameWidth;
+		FrameHeight = other.FrameHeight;
+		FrameTitle = other.FrameTitle;
+	}
+
+	ClientEntry &operator=(const ClientEntry &other)
+	{
+		Frames = other.Frames;
+		Address = other.Address;
+		FrameBufferSize = other.FrameBufferSize;
+		FrameWidth = other.FrameWidth;
+		FrameHeight = other.FrameHeight;
+		FrameTitle = other.FrameTitle;
+		return *this;
 	}
 
 	inline bool operator==(const ClientEntry &other) const
