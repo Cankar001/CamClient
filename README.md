@@ -27,7 +27,7 @@ The project currently supports these features:
 - face detection: planned to support face detection with the Mediapipe library from Google soon.
 - face recognition: planned to support face recognition with OpenCV soon.
 - web interface: planned to create a web interface (with Laravel and React/Vue.js?)
-- Record X last minutes: The ring queue, in which the frames from each client are stored on the server already make this feature possible, but it is planned to create a command interface or a web UI, in which this can be enabled/disables/triggered.
+- Record X last minutes: The ring queue, in which the frames from each client are stored on the server already make this feature possible, but it is planned to create a command interface or a web UI, in which this can be enabled/disabled/triggered.
 - Record at specific time: planned to support recording at specific times (for example if the home owner is on vacation)
 
 # Hardware
