@@ -4,7 +4,7 @@ CamVision is an open source security camera project. It uses OpenCV for image an
 
 # Getting started
 
-## Clone the repository
+## Clone the repository and navigate into the git folder
 ```shell
 git clone https://github.com/Cankar001/CamVision && cd CamVision
 ```
