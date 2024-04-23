@@ -10,7 +10,7 @@ struct ServerConfig
 	/// <summary>
 	/// Contains the path to the root path of the source, to read the version.
 	/// </summary>
-	std::string TargetUpdatePath;
+	std::string TargetSourcePath;
 
 	/// <summary>
 	/// Contains the path to the binaries from the source, which should be shipped to the clients.

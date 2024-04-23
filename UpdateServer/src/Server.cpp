@@ -19,7 +19,7 @@ Server::Server(const ServerConfig &config)
 	m_IPTable = new Core::IPTable();
 	m_Clients = new Core::Clients(m_Crypto, m_IPTable);
 
-	//m_LocalVersion = Core::utils::GetLocalVersion(m_Config.TargetUpdatePath);
+	//m_LocalVersion = Core::utils::GetLocalVersion(m_Config.TargetSourcePath);
 	m_LocalVersion = 101;
 	std::cout << "Current Server version: " << m_LocalVersion << std::endl;
 }
@@ -90,6 +90,10 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature)
 			std::cerr << "Could not delete the file " << update_file << std::endl;
 			return false;
 		}
+		else
+		{
+			std::cout << "Deleted existing packaged update from disk." << std::endl;
+		}
 	}
 
 	// load the contents of the directory and store them into the zip file
@@ -102,6 +106,7 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature)
 		// skip the archive itself
 		if (current_file_name.find("update") != std::string::npos)
 		{
+			std::cout << "Skipping update file" << std::endl;
 			continue;
 		}
 	

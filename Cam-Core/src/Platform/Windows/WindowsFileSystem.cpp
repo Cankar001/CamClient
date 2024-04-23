@@ -4,6 +4,7 @@
 
 #include <assert.h>
 #include <filesystem>
+#include <iostream>
 #include <Windows.h>
 #include <shellapi.h>
 #include <fileapi.h>
@@ -81,11 +82,18 @@ namespace Core
 	uint32 FileSystem::ReadTextFile(const std::string &filePath, std::string *out_str)
 	{
 		HANDLE handle = utils::OpenFileInternal(filePath);
+		if (handle == INVALID_HANDLE_VALUE)
+		{
+			DWORD error = GetLastError();
+			CAM_DEBUG_BREAK;
+			std::cout << "File creation error: " << error << std::endl;
+			return 0;
+		}
 
 		int64 size = utils::GetFileSizeInternal(handle);
 		if (!out_str)
 		{
-			return -1;
+			return 0;
 		}
 
 		char *readBuffer = new char[size + 1];

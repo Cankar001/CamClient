@@ -51,11 +51,11 @@ project "UpdateServer"
         }
 
     filter "configurations:Debug"
-        defines "CAM_DEBUG"
+        defines { "CAM_DEBUG", "NDEBUG" }
         symbols "On"
 
     filter "configurations:Release"
-        defines "CAM_RELEASE"
+        defines { "CAM_RELEASE", "NDEBUG" }
         optimize "On"
 		
 		

@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
 	ServerConfig config;
 	config.ServerIP = "127.0.0.1";
 	config.ServerPort = 44200;
-	config.TargetUpdatePath = "../CamClient";
+	config.TargetSourcePath = "../CamClient";
 	config.TargetBinaryPath = "../CamClient/bin/Debug-windows-x86_64/CamClient";
 	config.PublicKeyPath = "../CamClient/public_key.key";
 	config.PrivateKeyPath = "../CamClient/private_key.key";

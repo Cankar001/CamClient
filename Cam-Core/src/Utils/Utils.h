@@ -64,6 +64,10 @@ namespace Core::utils
 	{
 		std::string local_path = rootPath + "/src/CamVersion.h";
 		std::string version_content = "";
+		if (!FileSystem::Get()->FileExists(local_path))
+		{
+			return 0;
+		}
 
 		if (!FileSystem::Get()->ReadTextFile(local_path, &version_content))
 		{

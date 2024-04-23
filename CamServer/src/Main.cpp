@@ -4,6 +4,8 @@
 
 int main(int argc, char *argv[])
 {
+	Core::FileSystem::Get()->SetCurrentWorkingDirectory("../../../");
+
 	std::string cwd = "";
 	bool cwd_success = Core::FileSystem::Get()->GetCurrentWorkingDirectory(&cwd);
 	if (cwd_success)
