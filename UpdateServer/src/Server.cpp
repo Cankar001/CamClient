@@ -43,6 +43,8 @@ Server::~Server()
 
 void Server::Run()
 {
+	std::cout << "Waiting for clients to connect..." << std::endl;
+
 	for (;;)
 	{
 		m_Socket->Open();
@@ -70,7 +72,7 @@ void Server::Run()
 	std::cerr << "error: socket creation failed." << std::endl;
 }
 
-bool Server::LoadUpdateFile(bool forceDeleteSignature)
+bool Server::LoadUpdateFile(bool forceDeleteSignature, bool skipDebugFiles)
 {
 	// First check, if the update path is valid
 	std::string update_path = m_Config.TargetBinaryPath;
@@ -108,6 +110,15 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature)
 		{
 			std::cout << "Skipping update file" << std::endl;
 			continue;
+		}
+
+		if (skipDebugFiles)
+		{
+			if (current_file_name.find(".pdb") != std::string::npos)
+			{
+				std::cout << "Skipping debug file " << zip_name << std::endl;
+				continue;
+			}
 		}
 	
 		std::cout << "Adding " << zip_name.c_str() << "..." << std::endl;
