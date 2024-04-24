@@ -25,6 +25,7 @@ namespace Core
 			if (Ptr)
 			{
 				Size = bytes;
+				memset(Ptr, 0, Size);
 				return true;
 			}
 		}

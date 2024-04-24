@@ -21,7 +21,21 @@ Server::Server(const ServerConfig &config)
 
 	//m_LocalVersion = Core::utils::GetLocalVersion(m_Config.TargetSourcePath);
 	m_LocalVersion = 101;
+
+	std::string cwd = "";
+	Core::FileSystem::Get()->GetCurrentWorkingDirectory(&cwd);
+
+	std::cout << "===================== CONFIG ===================================" << std::endl;
+	std::cout << "Private key path      : " << config.PrivateKeyPath << std::endl;
+	std::cout << "Public key path       : " << config.PublicKeyPath << std::endl;
+	std::cout << "IP                    : " << config.ServerIP << std::endl;
+	std::cout << "Port                  : " << config.ServerPort << std::endl;
+	std::cout << "Signature path        : " << config.SignaturePath << std::endl;
+	std::cout << "Target binary path    : " << config.TargetBinaryPath << std::endl;
+	std::cout << "Target source path    : " << config.TargetSourcePath << std::endl;
 	std::cout << "Current Server version: " << m_LocalVersion << std::endl;
+	std::cout << "Current CWD           : " << cwd << std::endl;
+	std::cout << "================================================================" << std::endl;
 }
 
 Server::~Server()
@@ -84,8 +98,10 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature, bool skipDebugFiles)
 		return false;
 	}
 
+	std::cout << "Generating new update package at location " << update_file << "..." << std::endl;
+
 	// then delete an existing update file
-	if (Core::FileSystem::Get()->FileExists(update_file))
+	if (Core::FileSystem::Get()->FileExists(update_fileS))
 	{
 		if (!Core::FileSystem::Get()->RemoveFile(update_file))
 		{

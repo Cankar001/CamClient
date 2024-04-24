@@ -208,13 +208,15 @@ void Client::MessageLoop()
 		}
 		else if (header->Type == MessageType::SERVER_UPDATE_PIECE)
 		{
-			if (len != sizeof(ServerUpdatePieceMessage))
-			{
-				return;
-			}
+		//	if (len != sizeof(ServerUpdatePieceMessage))
+		//	{
+		//		std::cerr << "Update network package had an unexpected size!" << std::endl;
+		//		return;
+		//	}
 
 			if (!m_IsUpdating)
 			{
+				std::cerr << "Invalid state! The update is not in progress." << std::endl;
 				return;
 			}
 
@@ -223,18 +225,21 @@ void Client::MessageLoop()
 			// Verify that the tokens match.
 			if (msg->ClientToken != m_ClientToken || msg->ServerToken != m_ServerToken)
 			{
+				std::cerr << "Client or server token did not match!" << std::endl;
 				return;
 			}
 
 			// Verify that the message piece size is valid.
 			if (msg->PieceSize > PIECE_BYTES)
 			{
+				std::cerr << "Unexpected message piece size! Expected " << PIECE_BYTES << ", but got " << msg->PieceSize << std::endl;
 				return;
 			}
 
 			// Verify that the message contains the full piece data.
 			if (len != (sizeof(ServerUpdatePieceMessage) + msg->PieceSize))
 			{
+				std::cerr << "The network package has not the expected size!" << std::endl;
 				return;
 			}
 
@@ -247,6 +252,7 @@ void Client::MessageLoop()
 			// Verify that the data doesn't write outside the buffer.
 			if (msg->PiecePos + msg->PieceSize > m_UpdateData.Size)
 			{
+				std::cerr << "The piece pos offset is larger than the update size!" << std::endl;
 				return;
 			}
 
@@ -254,6 +260,7 @@ void Client::MessageLoop()
 			uint32 idx = msg->PiecePos / PIECE_BYTES;
 			if (idx >= m_UpdatePieces.Size)
 			{
+				std::cerr << "The piece index is larger than the update size!" << std::endl;
 				return;
 			}
 
@@ -272,6 +279,7 @@ void Client::MessageLoop()
 				}
 			}
 
+			// Copy the update piece into the target buffer.
 			memcpy(m_UpdateData.Ptr + msg->PiecePos, BUF + sizeof(ServerUpdatePieceMessage), msg->PieceSize);
 			m_UpdatePieces.Ptr[idx] = 1;
 			m_Status.Bytes += msg->PieceSize;
@@ -371,6 +379,7 @@ void Client::UpdateProgress(int64 now_ms, Core::addr_t addr)
 {
 	if (m_IsFinished)
 	{
+		std::cout << "Finished updating progress." << std::endl;
 		return;
 	}
 
@@ -400,8 +409,8 @@ void Client::UpdateProgress(int64 now_ms, Core::addr_t addr)
 	std::cout << "Update index: " << m_UpdateIdx << ", pieces size: " << m_UpdatePieces.Size << std::endl;
 	if (m_UpdateIdx >= m_UpdatePieces.Size)
 	{
-	//	if (m_Crypto->TestSignature(m_UpdateSignature.Data, SIG_BYTES, m_UpdateData.Ptr, m_UpdateData.Size, m_Config.PublicKey.Data, m_Config.PublicKey.Size))
-	//	{
+		if (m_Crypto->TestSignature(m_UpdateSignature.Data, SIG_BYTES, m_UpdateData.Ptr, m_UpdateData.Size, m_Config.PublicKey.Data, m_Config.PublicKey.Size))
+		{
 			std::cout << "Writing file " << (m_Config.UpdateBinaryPath + "/update.zip") << std::endl;
 			if (Core::FileSystem::Get()->WriteFile(m_Config.UpdateBinaryPath + "/update.zip", m_UpdateData.Ptr, m_UpdateData.Size))
 			{
@@ -413,12 +422,14 @@ void Client::UpdateProgress(int64 now_ms, Core::addr_t addr)
 			else
 			{
 				m_Status.Code = ClientStatusCode::BAD_WRITE;
+				CAM_DEBUG_BREAK;
 			}
-	//	}
-	//	else
-	//	{
-	//		m_Status.Code = ClientStatusCode::BAD_SIG;
-	//	}
+		}
+		else
+		{
+			m_Status.Code = ClientStatusCode::BAD_SIG;
+			CAM_DEBUG_BREAK;
+		}
 
 		Reset();
 		return;

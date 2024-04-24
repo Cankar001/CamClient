@@ -5,10 +5,7 @@
 int main(int argc, char *argv[])
 {
 	// Set the current working directory
-	std::string cwd = "";
 	Core::FileSystem::Get()->SetCurrentWorkingDirectory("../../../");
-	Core::FileSystem::Get()->GetCurrentWorkingDirectory(&cwd);
-	std::cout << "Current CWD: " << cwd.c_str() << std::endl;
 
 	ServerConfig config;
 	config.ServerIP = "127.0.0.1";
