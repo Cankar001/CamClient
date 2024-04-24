@@ -101,7 +101,7 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature, bool skipDebugFiles)
 	std::cout << "Generating new update package at location " << update_file << "..." << std::endl;
 
 	// then delete an existing update file
-	if (Core::FileSystem::Get()->FileExists(update_fileS))
+	if (Core::FileSystem::Get()->FileExists(update_file))
 	{
 		if (!Core::FileSystem::Get()->RemoveFile(update_file))
 		{
