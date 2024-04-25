@@ -129,6 +129,12 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature, bool skipDebugFiles)
 			continue;
 		}
 
+		if (current_file_name.find("logs") != std::string::npos)
+		{
+			CAM_LOG_INFO("Skipping logs.");
+			continue;
+		}
+
 		if (skipDebugFiles)
 		{
 			if (current_file_name.find(".pdb") != std::string::npos)
@@ -357,7 +363,7 @@ bool Server::Step()
 
 		if (!client->IsBandwidthAvailable(now_ms))
 		{
-			CAM_LOG_ERROR("Client has no bandwidth available!");
+		//	CAM_LOG_ERROR("Client has no bandwidth available!");
 			return true;
 		}
 
@@ -417,7 +423,7 @@ bool Server::Step()
 
 		if (!client->IsBandwidthAvailable(now_ms))
 		{
-			CAM_LOG_ERROR("Client has no bandwidth available!");
+		//	CAM_LOG_ERROR("Client has no bandwidth available!");
 			return true;
 		}
 
@@ -457,6 +463,7 @@ bool Server::Step()
 	{
 		if (len != sizeof(ClientWantsVersionMessage))
 		{
+			CAM_LOG_ERROR("ClientWantsVersionMessage: Unexpected message size.");
 			return true;
 		}
 
