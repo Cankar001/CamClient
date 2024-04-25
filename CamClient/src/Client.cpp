@@ -2,26 +2,35 @@
 
 #include <iostream>
 
+#include "Core/Log.h"
+
 #define MAX_NETWORK_READ_RETRIES 200
 
 Client::Client(const ClientConfig &config)
 	: m_Config(config), m_Camera(false, 1280, 720)
 {
-	m_Socket = Core::Socket::Create();
+	std::string cwd = "";
+	Core::FileSystem::Get()->GetCurrentWorkingDirectory(&cwd);
+	m_Version = Core::utils::GetLocalVersion("../../..");
 
+	CAM_LOG_INFO("===================== CONFIG ===================================");
+	CAM_LOG_INFO("IP                    : {}", config.ServerIP);
+	CAM_LOG_INFO("Port                  : {}", config.Port);
+	CAM_LOG_INFO("Current Client version: {}", m_Version);
+	CAM_LOG_INFO("Current CWD           : {}", cwd);
+	CAM_LOG_INFO("================================================================");
+
+	m_Socket = Core::Socket::Create();
 	if (!m_Socket->Open(true, m_Config.ServerIP, m_Config.Port))
 	{
-		std::cerr << "Socket could not be opened!" << std::endl;
+		CAM_LOG_ERROR("Socket could not be opened!");
 	}
-
 	if (!m_Socket->SetNonBlocking(true))
 	{
-		std::cerr << "Socket could not be set to non-blocking!" << std::endl;
+		CAM_LOG_ERROR("Socket could not be set to non-blocking!");
 	}
 
 	m_Host = m_Socket->Lookup(m_Config.ServerIP, m_Config.Port);
-	m_Version = Core::utils::GetLocalVersion("../../..");
-	std::cout << "CamClient version: " << m_Version << std::endl;
 }
 
 Client::~Client()
@@ -31,7 +40,7 @@ Client::~Client()
 
 void Client::Release()
 {
-	std::cout << "Releasing all resources." << std::endl;
+	CAM_LOG_INFO("Releasing all resources.");
 
 	if (m_CameraThread.joinable())
 		m_CameraThread.join();
@@ -43,7 +52,7 @@ void Client::Release()
 
 	if (m_Socket)
 	{
-		std::cout << "Releasing socket" << std::endl;
+		CAM_LOG_INFO("Releasing socket");
 		delete m_Socket;
 		m_Socket = nullptr;
 	}
@@ -73,7 +82,7 @@ void Client::Run(bool shouldShowFrames)
 
 void Client::NetworkLoop()
 {
-	std::cout << "Sending connection start request to server..." << std::endl;
+	CAM_LOG_DEBUG("Sending connection start request to server...");
 	ClientConnectionStartMessage msg = {};
 	msg.Header.Type = CLIENT_CONNECTION_START;
 	msg.Header.Version = m_Version;
@@ -89,7 +98,7 @@ void Client::NetworkLoop()
 		if (!m_Running && !m_SentConnectionCloseRequest)
 		{
 			// send request to server, that we want to close the connection
-			std::cout << "Sending connection close request to server..." << std::endl;
+			CAM_LOG_DEBUG("Sending connection close request to server...");
 			ClientConnectionCloseMessage close_msg = {};
 			close_msg.Header.Type = CLIENT_CONNECTION_CLOSE;
 			close_msg.Header.Version = m_Version;
@@ -104,20 +113,20 @@ void Client::NetworkLoop()
 			++current_connection_retry;
 			if (current_connection_retry >= MAX_NETWORK_READ_RETRIES && !m_ConnectedToServer)
 			{
-				std::cerr << "Fatal error: Could not connect to server!" << std::endl;
+				CAM_LOG_ERROR("Fatal error: Could not connect to server!");
 				m_Running = false;
 				m_NetworkThreadFinished = true;
 				return;
 			}
 			else if (current_connection_retry >= 100 * MAX_NETWORK_READ_RETRIES && m_ConnectedToServer)
 			{
-				std::cerr << "Fatal error: Lost connection to server!" << std::endl;
+				CAM_LOG_ERROR("Fatal error: Lost connection to server!");
 				m_Running = false;
 				m_NetworkThreadFinished = true;
 				return;
 			}
 
-			std::cerr << "Failed to receive data from network layer!" << std::endl;
+			CAM_LOG_ERROR("Failed to receive data from network layer!");
 			continue;
 		}
 		else
@@ -128,13 +137,13 @@ void Client::NetworkLoop()
 		// ignore all messages from unknown senders
 		if (addr.Value != m_Host.Value)
 		{
-			std::cerr << "Unknown sender!" << std::endl;
+			CAM_LOG_ERROR("Unknown sender!");
 			continue;
 		}
 
 		if (len < sizeof(header_t))
 		{
-			std::cerr << "Unexpected header size!" << std::endl;
+			CAM_LOG_ERROR("Unexpected header size!");
 			continue;
 		}
 
@@ -142,8 +151,9 @@ void Client::NetworkLoop()
 
 		if (header->Version != m_Version)
 		{
-			std::cerr << "Unexpected version encountered." << std::endl;
+			CAM_LOG_ERROR("Unexpected version encountered.");
 			continue;
+
 		}
 
 		bool message_success = false;
@@ -164,7 +174,7 @@ void Client::NetworkLoop()
 
 		if (!message_success)
 		{
-			std::cerr << "Specific message handler failed. Aborting." << std::endl;
+			CAM_LOG_ERROR("Specific message handler failed. Aborting.");
 			break;
 		}
 
@@ -172,7 +182,7 @@ void Client::NetworkLoop()
 		if (header->Type == SERVER_CONNECTION_CLOSE && message_success)
 		{
 			m_NetworkThreadFinished = true;
-			std::cout << "We got the connection close response from the server and it was successful. Closing Connection." << std::endl;
+			CAM_LOG_INFO("We got the connection close response from the server and it was successful. Closing Connection.");
 			break;
 		}
 	}
@@ -209,7 +219,7 @@ void Client::Show()
 
 		if (!frame)
 		{
-			std::cerr << "Could not read image from camera!" << std::endl;
+			CAM_LOG_ERROR("Could not read image from camera!");
 			continue;
 		}
 
@@ -224,21 +234,21 @@ bool Client::OnConnectionAccepted(Byte *message, uint32 length)
 {
 	if (length != sizeof(ServerConnectionStartResponse))
 	{
-		std::cerr << "Unexpected message size encountered." << std::endl;
+		CAM_LOG_ERROR("Unexpected message size encountered.");
 		return false;
 	}
 
-	std::cout << "Trying to connect to server..." << std::endl;
+	CAM_LOG_DEBUG("Trying to connect to server...");
 	ServerConnectionStartResponse *msg = (ServerConnectionStartResponse *)message;
 
 	if (!msg->ConnectionAccepted)
 	{
-		std::cerr << "Server responded unsuccessful to connection start request!" << std::endl;
+		CAM_LOG_ERROR("Server responded unsuccessful to connection start request!");
 		return false;
 	}
 
 	m_ConnectedToServer = true;
-	std::cout << "Connected to server successfully!" << std::endl;
+	CAM_LOG_INFO("Connected to server successfully!");
 	return true;
 }
 
@@ -246,20 +256,20 @@ bool Client::OnConnectionClosed(Byte *message, uint32 length)
 {
 	if (length != sizeof(ServerConnectionCloseResponse))
 	{
-		std::cerr << "Unexpected message size encountered." << std::endl;
+		CAM_LOG_ERROR("Unexpected message size encountered.");
 		return false;
 	}
 
-	std::cout << "Trying to disconnect from server..." << std::endl;
+	CAM_LOG_DEBUG("Trying to disconnect from server...");
 	ServerConnectionCloseResponse *msg = (ServerConnectionCloseResponse *)message;
 
 	if (!msg->ConnectionClosed)
 	{
-		std::cerr << "Server responded unsuccessful to connection close request!" << std::endl;
+		CAM_LOG_ERROR("Server responded unsuccessful to connection close request!");
 		return false;
 	}
 
-	std::cout << "Disconnected from server successfully!" << std::endl;
+	CAM_LOG_INFO("Disconnected from server successfully!");
 	return true;
 }
 
@@ -267,7 +277,7 @@ bool Client::OnFrameResponse(Byte *message, uint32 length)
 {
 	if (length != sizeof(ServerFrameResponse))
 	{
-		std::cerr << "Unexpected message size encountered." << std::endl;
+		CAM_LOG_ERROR("Unexpected message size encountered.");
 		return false;
 	}
 
@@ -276,11 +286,11 @@ bool Client::OnFrameResponse(Byte *message, uint32 length)
 
 	if (!msg->FrameStored && msg->StoredFrameCount != m_Camera.GetFrameCount())
 	{
-		std::cerr << "Server responded with unsuccessful frame stored!" << std::endl;
+		CAM_LOG_ERROR("Server responded with unsuccessful frame stored!");
 		return false;
 	}
 
-	std::cout << "Read back the frame response successfully!" << std::endl;
+	CAM_LOG_INFO("Read back the frame response successfully!");
 	return true;
 }
 
@@ -301,10 +311,10 @@ void Client::SendFrameToServer(Byte *frame, uint32 frame_size, uint32 frame_widt
 	msg.Frame.Format = m_Camera.GetFormat();
 
 	int32 bytesSent = m_Socket->Send(&msg, sizeof(msg), m_Host);
-	std::cout << "Sending frame with " << sizeof(msg) << " bytes. Actual message size: " << bytesSent << std::endl;
+	CAM_LOG_INFO("Sending frame with {0} bytes. Actual message size: {1}", sizeof(msg), bytesSent);
 
 	//std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
 	bytesSent = m_Socket->SendLarge(frame, frame_size, m_Host);
-	std::cout << "Sending frame data with " << frame_size << " bytes. Actual message size: " << bytesSent << std::endl;
+	CAM_LOG_INFO("Sending frame data with {0} bytes. Actual message size: {1}", frame_size, bytesSent);
 }

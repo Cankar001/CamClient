@@ -4,23 +4,24 @@
 
 #include "Messages.h"
 
+#include "Core/Log.h"
+
 Server::Server(const ServerConfig &config)
 	: m_Config(config)
 {
 	m_Socket = Core::Socket::Create();
 
 	std::string cwd = "";
-	bool cwd_success = Core::FileSystem::Get()->GetCurrentWorkingDirectory(&cwd);
-	if (cwd_success)
-	{
-		m_Version = Core::utils::GetLocalVersion(cwd);
-		std::cout << "CamServer version: " << m_Version << std::endl;
-	}
-	else
-	{
-		m_Version = 100; // Set the default version
-		std::cout << "CamServer version: " << m_Version << std::endl;
-	}
+	Core::FileSystem::Get()->GetCurrentWorkingDirectory(&cwd);
+	m_Version = Core::utils::GetLocalVersion(cwd);
+
+	CAM_LOG_INFO("===================== CONFIG ===================================");
+	CAM_LOG_INFO("IP                    : {}", config.ServerIP);
+	CAM_LOG_INFO("Port                  : {}", config.Port);
+	CAM_LOG_INFO("Video backup duration : {}", config.VideoBackupDuration);
+	CAM_LOG_INFO("Current Server version: {}", m_Version);
+	CAM_LOG_INFO("Current CWD           : {}", cwd);
+	CAM_LOG_INFO("================================================================");
 }
 
 Server::~Server()
@@ -45,14 +46,19 @@ Server::~Server()
 void Server::Run()
 {
 	m_Running = true;
+	CAM_LOG_INFO("Waiting for clients to connect...");
 
 	for (;;)
 	{
-		m_Socket->Open();
+		if (!m_Socket->Open())
+		{
+			CAM_LOG_ERROR("Could not open socket!");
+			break;
+		}
 
 		if (!m_Socket->Bind(m_Config.Port))
 		{
-			std::cerr << "Could not bind socket" << std::endl;
+			CAM_LOG_ERROR("Could not bind socket");
 			break;
 		}
 
@@ -64,10 +70,10 @@ void Server::Run()
 			}
 		}
 
-		std::cerr << "error: network interface failure." << std::endl;
+		CAM_LOG_ERROR("Network interface failure.");
 		m_Socket->Close();
 
-		Core::SleepMS(2000);
+		Core::SleepMS(10);
 	}
 
 	m_Running = false;
@@ -119,17 +125,17 @@ bool Server::OnClientConnected(Core::addr_t &clientAddr, Byte *message, int32 ad
 	header_t *header = (header_t *)message;
 	if (header->Version != m_Version)
 	{
-		std::cerr << "Version did not match with server version!" << std::endl;
+		CAM_LOG_ERROR("Version did not match with server version!");
 		return false;
 	}
 
 	if (addrLen != sizeof(ClientConnectionStartMessage))
 	{
-		std::cerr << "Request size was not as expected!" << std::endl;
+		CAM_LOG_ERROR("Request size was not as expected!");
 		return false;
 	}
 
-	std::cout << "Client " << clientAddr.Value  << " tries to connect!" << std::endl;
+	CAM_LOG_DEBUG("Client {} tries to connect!", clientAddr.Value);
 	ClientConnectionStartMessage *msg = (ClientConnectionStartMessage *)message;
 
 	bool client_connected = false;
@@ -143,7 +149,7 @@ bool Server::OnClientConnected(Core::addr_t &clientAddr, Byte *message, int32 ad
 		uint32 minutes = m_Config.VideoBackupDuration;
 		uint32 seconds = minutes * 60;
 		uint32 frames = seconds * fps;
-		std::cout << "Calculated frame count " << frames << " for " << minutes << " minutes with " << fps << " fps." << std::endl;
+		CAM_LOG_DEBUG("Calculated frame count {0} for {1} minutes with {2} fps.", frames, minutes, fps);
 
 		ClientEntry client(frames * sizeof(cv::Mat));
 		client.Address = clientAddr;
@@ -158,7 +164,7 @@ bool Server::OnClientConnected(Core::addr_t &clientAddr, Byte *message, int32 ad
 	response.ConnectionAccepted = client_connected;
 	m_Socket->Send(&response, sizeof(response), clientAddr);
 
-	std::cout << "Client " << clientAddr.Value << " connected successfully!" << std::endl;
+	CAM_LOG_INFO("Client {} connected successfully!", clientAddr.Value);
 	return true;
 }
 
@@ -167,17 +173,17 @@ bool Server::OnClientDisconnected(Core::addr_t &clientAddr, Byte *message, int32
 	header_t *header = (header_t *)message;
 	if (header->Version != m_Version)
 	{
-		std::cerr << "Version did not match with server version!" << std::endl;
+		CAM_LOG_ERROR("Version did not match with server version!");
 		return false;
 	}
 
 	if (addrLen != sizeof(ClientConnectionCloseMessage))
 	{
-		std::cerr << "Request size was not as expected!" << std::endl;
+		CAM_LOG_ERROR("Request size was not as expected!");
 		return false;
 	}
 
-	std::cout << "Client " << clientAddr.Value << " tries to disconnect!" << std::endl;
+	CAM_LOG_DEBUG("Client {} tries to disconnect!", clientAddr.Value);
 	ClientConnectionCloseMessage *msg = (ClientConnectionCloseMessage *)message;
 
 	bool client_removed = false;
@@ -197,7 +203,7 @@ bool Server::OnClientDisconnected(Core::addr_t &clientAddr, Byte *message, int32
 	response.ConnectionClosed = client_removed;
 	m_Socket->Send(&response, sizeof(response), clientAddr);
 
-	std::cout << "Client " << clientAddr.Value << " disconnected successfully!" << std::endl;
+	CAM_LOG_INFO("Client {} disconnected successfully!", clientAddr.Value);
 	return true;
 }
 
@@ -206,17 +212,17 @@ bool Server::OnClientFrame(Core::addr_t &clientAddr, Byte *message, int32 addrLe
 	header_t *header = (header_t *)message;
 	if (header->Version != m_Version)
 	{
-		std::cerr << "Version did not match with server version!" << std::endl;
+		CAM_LOG_ERROR("Version did not match with server version!");
 		return false;
 	}
 
 	if (addrLen != sizeof(ClientFrameMessage))
 	{
-		std::cerr << "Request size was not as expected!" << std::endl;
+		CAM_LOG_ERROR("Request size was not as expected!");
 		return false;
 	}
 
-	std::cout << "Client " << clientAddr.Value << " tries to send a frame!" << std::endl;
+	CAM_LOG_DEBUG("Client {} tries to send a frame!", clientAddr.Value);
 	ClientFrameMessage *msg = (ClientFrameMessage *)message;
 
 	bool frame_stored = false;
@@ -261,7 +267,7 @@ bool Server::OnClientFrame(Core::addr_t &clientAddr, Byte *message, int32 addrLe
 	response.StoredFrameCount = frame_number;
 	m_Socket->Send(&response, sizeof(response), clientAddr);
 
-	std::cout << "Server received frame from Client " << clientAddr.Value << " successfully!" << std::endl;
+	CAM_LOG_INFO("Server received frame from Client {} successfully!", clientAddr.Value);
 	return true;
 }
 
