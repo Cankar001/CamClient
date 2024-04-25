@@ -4,6 +4,7 @@
 #include <assert.h>
 
 #include "Utils/Utils.h"
+#include "Utils/ZipArchive.h"
 #include "Core/Log.h"
 
 static uint32 MAX_RECV_ATTEMPTS = 250;
@@ -81,23 +82,22 @@ void Client::Run()
 
 		if (m_Status.Code == ClientStatusCode::UP_TO_DATE)
 		{
-			CAM_DEBUG_BREAK;
-#if 0
-			if (ExtractUpdate(m_Config.UpdateBinaryPath + "/update.zip"))
+			CAM_LOG_DEBUG("Extracting zip archive...");
+			Core::ZipArchive archive;
+			std::vector<Core::ZipFile> files = archive.Load(m_Config.UpdateBinaryPath + "/update.zip");
+			CAM_LOG_INFO("zip archive extracted successfully.");
+			for (const auto &file : files)
 			{
-				// TODO: start CamClient application
-				CAM_LOG_INFO("Starting CamClient...");
-
-				// Update local version
-				m_LocalVersion = Core::utils::GetLocalVersion(m_Config.UpdateTargetPath);
-
-				m_Status.Code = ClientStatusCode::NONE;
+				CAM_LOG_INFO("{}", file.Path);
 			}
-			else
-			{
-				CAM_LOG_ERROR("Could not extract the archive!");
-			}
-#endif
+
+			// Update local version
+			uint32 new_version = Core::utils::GetLocalVersion(m_Config.UpdateTargetPath);
+
+			m_Status.Code = ClientStatusCode::NONE;
+
+			// TODO: start CamClient application
+			CAM_LOG_INFO("Starting CamClient v{}...", new_version);
 		}
 		else if (m_Status.Code == ClientStatusCode::BAD_SIG)
 		{
@@ -132,6 +132,8 @@ void Client::MessageLoop()
 			++m_CurrentRecvAttempt;
 			return;
 		}
+
+		m_CurrentRecvAttempt = 0;
 
 		// ignore all messages from unknown senders
 		if (addr.Value != m_Host.Value)
@@ -437,18 +439,11 @@ void Client::UpdateProgress(int64 now_ms, Core::addr_t addr)
 		{
 			std::string update_file = m_Config.UpdateBinaryPath + "/update.zip";
 			CAM_LOG_DEBUG("Writing file {}", update_file);
-			if (Core::FileSystem::Get()->WriteFile(update_file, m_UpdateData.Ptr, m_UpdateData.Size))
-			{
-				m_IsFinished = true;
-				m_Status.Code = ClientStatusCode::UP_TO_DATE;
-				CAM_LOG_INFO("File {} written successfully.", update_file);
-				return;
-			}
-			else
-			{
-				m_Status.Code = ClientStatusCode::BAD_WRITE;
-				CAM_DEBUG_BREAK;
-			}
+			bool writeSuccess = Core::FileSystem::Get()->WriteFile(update_file, m_UpdateData.Ptr, m_UpdateData.Size);
+			m_IsFinished = true;
+			m_Status.Code = ClientStatusCode::UP_TO_DATE;
+			CAM_LOG_INFO("File {} written successfully.", update_file);
+			return;
 		}
 		else
 		{
