@@ -86,6 +86,7 @@ private:
 
 	void MessageLoop();
 	bool ExtractUpdate(const std::string &zipPath);
+	bool LoadLocalVersion();
 
 private:
 
@@ -109,6 +110,7 @@ private:
 	bool m_IsFinished = true;
 	bool m_IsUpdating = false;
 	uint32 m_UpdateIdx;
+	uint32 m_CurrentRecvAttempt = 0;
 	Signature m_UpdateSignature;
 };
 

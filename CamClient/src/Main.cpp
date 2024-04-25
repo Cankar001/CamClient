@@ -18,6 +18,8 @@ int main(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
+	Core::Init();
+
 	ClientConfig config;
 	config.ServerIP = "127.0.0.1";
 	config.Port = 45645;
@@ -27,5 +29,6 @@ int main(int argc, char *argv[])
 	// start all worker threads
 	c.Run();
 
+	Core::Shutdown();
 	return 0;
 }

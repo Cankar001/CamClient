@@ -25,7 +25,7 @@ project "UpdateServer"
     {
 		"src",
 		"%{IncludeDir.cam_core}",
-		"%{IncludeDir.miniz}"
+		"%{IncludeDir.spdlog}",
     }
 	
 	postbuildcommands
@@ -35,7 +35,7 @@ project "UpdateServer"
 	links
 	{
 		"Cam-Core",
-		"Miniz"
+		"spdlog",
 	}
 
     filter "system:windows"

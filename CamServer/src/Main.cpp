@@ -4,6 +4,7 @@
 
 int main(int argc, char *argv[])
 {
+	Core::Init();
 	Core::FileSystem::Get()->SetCurrentWorkingDirectory("../../../");
 
 	std::string cwd = "";
@@ -38,6 +39,7 @@ int main(int argc, char *argv[])
 	s.StartFramePreviews();
 	s.Run();
 
+	Core::Shutdown();
 	return 0;
 }
 

@@ -5,6 +5,9 @@
 #include <miniz/miniz.h>
 
 #include "Utils/Utils.h"
+#include "Core/Log.h"
+
+static uint32 MAX_RECV_ATTEMPTS = 500;
 
 Client::Client(const ClientConfig &config)
 	: m_Config(config)
@@ -12,14 +15,28 @@ Client::Client(const ClientConfig &config)
 	m_Socket = Core::Socket::Create();
 	m_Crypto = Core::Crypto::Create();
 
+	std::string cwd = "";
+	Core::FileSystem::Get()->GetCurrentWorkingDirectory(&cwd);
+
+	LoadLocalVersion();
+
+	CAM_LOG_INFO("===================== CONFIG ===================================");
+	CAM_LOG_INFO("IP                    : {}", config.ServerIP);
+	CAM_LOG_INFO("Port                  : {}", config.Port);
+	CAM_LOG_INFO("Update binary path    : {}", config.UpdateBinaryPath);
+	CAM_LOG_INFO("Update source path    : {}", config.UpdateTargetPath);
+	CAM_LOG_INFO("Current Client version: {}", m_LocalVersion);
+	CAM_LOG_INFO("Current CWD           : {}", cwd);
+	CAM_LOG_INFO("================================================================");
+
 	if (!m_Socket->Open(true, m_Config.ServerIP, m_Config.Port))
 	{
-		std::cerr << "Socket could not be opened!" << std::endl;
+		CAM_LOG_ERROR("Socket could not be opened!");
 	}
 
 	if (!m_Socket->SetNonBlocking(true))
 	{
-		std::cerr << "Socket could not be set to non-blocking!" << std::endl;
+		CAM_LOG_ERROR("Socket could not be set to non-blocking!");
 	}
 
 	m_Host = m_Socket->Lookup(m_Config.ServerIP, m_Config.Port);
@@ -37,24 +54,13 @@ Client::~Client()
 
 void Client::RequestServerVersion()
 {
-	// First load the local client version
-	uint32 local_version = Core::utils::GetLocalVersion(m_Config.UpdateTargetPath);
-	if (!local_version)
-	{
-		std::cerr << "Could not retrieve the local version!" << std::endl;
-		return;
-	}
-
-	std::cout << "Local version: " << local_version << std::endl;
-	m_LocalVersion = local_version;
-
 	// Then request the latest client version from the server
-	std::cout << "Sending server version request..." << std::endl;
+	CAM_LOG_DEBUG("Sending server version request...");
 	ClientWantsVersionMessage message = {};
-	message.LocalVersion = local_version;
+	message.LocalVersion = m_LocalVersion;
 	message.ClientVersion = 0;
 	message.Header.Type = MessageType::CLIENT_REQUEST_VERSION;
-	message.Header.Version = local_version;
+	message.Header.Version = m_LocalVersion;
 	uint32 bytes_sent = m_Socket->Send(&message, sizeof(message), m_Host);
 	assert(bytes_sent == sizeof(message));
 
@@ -68,12 +74,18 @@ void Client::Run()
 
 	for (;;)
 	{
+		if (m_CurrentRecvAttempt >= MAX_RECV_ATTEMPTS)
+		{
+			m_CurrentRecvAttempt = 0;
+			break;
+		}
+
 		if (m_Status.Code == ClientStatusCode::UP_TO_DATE)
 		{
 			if (ExtractUpdate(m_Config.UpdateBinaryPath + "/update.zip"))
 			{
 				// TODO: start CamClient application
-				std::cout << "Starting CamClient..." << std::endl;
+				CAM_LOG_INFO("Starting CamClient...");
 
 				// Update local version
 				m_LocalVersion = Core::utils::GetLocalVersion(m_Config.UpdateTargetPath);
@@ -82,16 +94,16 @@ void Client::Run()
 			}
 			else
 			{
-				std::cerr << "Could not extract the archive!" << std::endl;
+				CAM_LOG_ERROR("Could not extract the archive!");
 			}
 		}
 		else if (m_Status.Code == ClientStatusCode::BAD_SIG)
 		{
-			std::cerr << "ERROR: Bad Signature from last update." << std::endl;
+			CAM_LOG_ERROR("Bad Signature from last update.");
 		}
 		else if (m_Status.Code == ClientStatusCode::BAD_WRITE)
 		{
-			std::cerr << "ERROR: Bad Write from last update." << std::endl;
+			CAM_LOG_ERROR("Bad Write from last update.");
 		}
 
 		MessageLoop();
@@ -99,12 +111,6 @@ void Client::Run()
 		// Process updates.
 		int64 now_ms = Core::QueryMS();
 		UpdateProgress(now_ms, m_Host);
-
-		static uint32 last_bytes;
-		if (last_bytes != m_Status.Bytes)
-		{
-			last_bytes = m_Status.Bytes;
-		}
 
 		// Limit the update rate.
 		Core::SleepMS(10);
@@ -121,6 +127,7 @@ void Client::MessageLoop()
 		int32 len = m_Socket->Recv(BUF, sizeof(BUF), &addr);
 		if (len < 0)
 		{
+			++m_CurrentRecvAttempt;
 			return;
 		}
 
@@ -140,11 +147,12 @@ void Client::MessageLoop()
 		{
 			if (len != sizeof(ServerVersionInfoMessage))
 			{
+				CAM_LOG_ERROR("Unexpected network message size!");
 				return;
 			}
 
 			ServerVersionInfoMessage *msg = (ServerVersionInfoMessage *)BUF;
-			std::cout << "Received new server version: " << msg->Version << std::endl;
+			CAM_LOG_DEBUG("Received new server version: {}", msg->Version);
 			if (msg->Version != m_LocalVersion)
 			{
 				// The versions are different, we need an update
@@ -153,24 +161,24 @@ void Client::MessageLoop()
 
 				// Copy the public key once
 				m_Config.PublicKey.Size = msg->PublicKey.Size;
-				memcpy(m_Config.PublicKey.Data, msg->PublicKey.Data, sizeof(msg->PublicKey.Data));
+				memcpy(m_Config.PublicKey.Data, msg->PublicKey.Data, msg->PublicKey.Size);
 				
 				// reset the update state, so that in the next update the update will start
 				m_IsFinished = false;
-				std::cout << "Requiring update..." << std::endl;
+				CAM_LOG_WARN("Requiring update...");
 			}
 			else
 			{
 				// The versions are the same, we have the latest version
 				m_Status.Code = ClientStatusCode::UP_TO_DATE;
-				std::cout << "binaries are up-to-date. No action required." << std::endl;
+				CAM_LOG_INFO("Binaries are up-to-date. No action required.");
 			}
 		}
 		else if (header->Type == MessageType::SERVER_UPDATE_BEGIN)
 		{
 			if (len != sizeof(ServerUpdateBeginMessage))
 			{
-				std::cerr << "received wrong package size" << std::endl;
+				CAM_LOG_ERROR("Received wrong package size");
 				return;
 			}
 
@@ -179,26 +187,26 @@ void Client::MessageLoop()
 			// Verify that the update size is reasonable (<200MB).
 			if (msg->UpdateSize == 0 || msg->UpdateSize >= (200 * 1024 * 1024))
 			{
-				std::cerr << "Update size was very unrealistic! Size: " << msg->UpdateSize << std::endl;
+				CAM_LOG_ERROR("Update size was very unrealistic! Size: {}", msg->UpdateSize);
 				return;
 			}
 
 			// Allocate space for update data.
 			if (!m_UpdateData.Alloc(msg->UpdateSize))
 			{
-				std::cerr << "Could not allocated enough space for update!" << std::endl;
+				CAM_LOG_ERROR("Could not allocated enough space for update!");
 				return;
 			}
 
 			// Allocate space for the piece tracker table.
 			if (!m_UpdatePieces.Alloc((msg->UpdateSize + PIECE_BYTES - 1) / PIECE_BYTES))
 			{
-				std::cerr << "Could not allocated enough space for update!" << std::endl;
+				CAM_LOG_ERROR("Could not allocated enough space for update!");
 				return;
 			}
 
 			memcpy(&m_UpdateSignature, &msg->UpdateSignature, sizeof(Signature));
-			std::cout << "Received update begin request, total size: " << msg->UpdateSize << std::endl;
+			CAM_LOG_DEBUG("Received update begin request, total size: {}", msg->UpdateSize);
 
 			m_Status.Bytes = 0;
 			m_Status.Total = m_UpdateData.Size;
@@ -208,15 +216,9 @@ void Client::MessageLoop()
 		}
 		else if (header->Type == MessageType::SERVER_UPDATE_PIECE)
 		{
-		//	if (len != sizeof(ServerUpdatePieceMessage))
-		//	{
-		//		std::cerr << "Update network package had an unexpected size!" << std::endl;
-		//		return;
-		//	}
-
 			if (!m_IsUpdating)
 			{
-				std::cerr << "Invalid state! The update is not in progress." << std::endl;
+				CAM_LOG_ERROR("Invalid state! The update is not in progress.");
 				return;
 			}
 
@@ -225,34 +227,35 @@ void Client::MessageLoop()
 			// Verify that the tokens match.
 			if (msg->ClientToken != m_ClientToken || msg->ServerToken != m_ServerToken)
 			{
-				std::cerr << "Client or server token did not match!" << std::endl;
+				CAM_LOG_ERROR("Client or server token did not match!");
 				return;
 			}
 
 			// Verify that the message piece size is valid.
 			if (msg->PieceSize > PIECE_BYTES)
 			{
-				std::cerr << "Unexpected message piece size! Expected " << PIECE_BYTES << ", but got " << msg->PieceSize << std::endl;
+				CAM_LOG_ERROR("Unexpected message piece size! Expected {0}, but got {1}", PIECE_BYTES, msg->PieceSize);
 				return;
 			}
 
 			// Verify that the message contains the full piece data.
 			if (len != (sizeof(ServerUpdatePieceMessage) + msg->PieceSize))
 			{
-				std::cerr << "The network package has not the expected size!" << std::endl;
+				CAM_LOG_ERROR("The network package has not the expected size!");
 				return;
 			}
 
 			// Verify that the position is on a piece boundry and something we actually requested.
 			if ((msg->PiecePos % PIECE_BYTES) != 0)
 			{
+				// TODO: Log error
 				return;
 			}
 
 			// Verify that the data doesn't write outside the buffer.
 			if (msg->PiecePos + msg->PieceSize > m_UpdateData.Size)
 			{
-				std::cerr << "The piece pos offset is larger than the update size!" << std::endl;
+				CAM_LOG_ERROR("The piece pos offset is larger than the update size!");
 				return;
 			}
 
@@ -260,13 +263,14 @@ void Client::MessageLoop()
 			uint32 idx = msg->PiecePos / PIECE_BYTES;
 			if (idx >= m_UpdatePieces.Size)
 			{
-				std::cerr << "The piece index is larger than the update size!" << std::endl;
+				CAM_LOG_ERROR("The piece index is larger than the update size!");
 				return;
 			}
 
 			// Verify that we need the piece.
 			if (m_UpdatePieces.Ptr[idx])
 			{
+				// TODO: Log error
 				return;
 			}
 
@@ -275,6 +279,7 @@ void Client::MessageLoop()
 			{
 				if (msg->PieceSize != PIECE_BYTES)
 				{
+					// TODO: Log error
 					return;
 				}
 			}
@@ -288,16 +293,18 @@ void Client::MessageLoop()
 		{
 			if (len != sizeof(ServerUpdateTokenMessage))
 			{
+				// TODO: Log error
 				return;
 			}
 
 			ServerUpdateTokenMessage *msg = (ServerUpdateTokenMessage *)BUF;
 			if (msg->ClientToken != m_ClientToken)
 			{
+				CAM_LOG_ERROR("Client tokens did not match!");
 				return;
 			}
 
-			std::cout << "Received new server token: " << msg->ServerToken << std::endl;
+			CAM_LOG_INFO("Received new server token: {}", msg->ServerToken);
 			m_ServerToken = msg->ServerToken;
 		}
 	}
@@ -307,12 +314,12 @@ bool Client::ExtractUpdate(const std::string &zipPath)
 {
 	mz_zip_archive zip_archive;
 
-	std::cout << "Extracting archive " << zipPath.c_str() << "..." << std::endl;
+	CAM_LOG_DEBUG("Extracting archive {}...", zipPath);
 
 	mz_bool status = mz_zip_reader_init_file(&zip_archive, zipPath.c_str(), 0);
 	if (!status)
 	{
-		std::cerr << "Could not open the ZIP file!" << std::endl;
+		CAM_LOG_ERROR("Could not open the ZIP file!");
 		return false;
 	}
 
@@ -321,11 +328,11 @@ bool Client::ExtractUpdate(const std::string &zipPath)
 		mz_zip_archive_file_stat file_stat;
 		if (!mz_zip_reader_file_stat(&zip_archive, i, &file_stat))
 		{
-			std::cerr << "Could not make the file stats" << std::endl;
+			CAM_LOG_ERROR("Could not make the file stats");
 
 			if (!mz_zip_reader_end(&zip_archive))
 			{
-				std::cerr << "Could not close the zip reader" << std::endl;
+				CAM_LOG_ERROR("Could not close the zip reader");
 			}
 
 			return false;
@@ -337,13 +344,13 @@ bool Client::ExtractUpdate(const std::string &zipPath)
 		uint64 uncompressed_size = file_stat.m_uncomp_size;
 		uint64 compressed_size = file_stat.m_comp_size;
 		mz_bool is_dir = mz_zip_reader_is_file_a_directory(&zip_archive, i);
-		std::cout << "Extracting file " << file_name.c_str() << std::endl;
+		CAM_LOG_DEBUG("Extracting file {}", file_name);
 
 		Byte *p = (Byte*)mz_zip_reader_extract_file_to_heap(&zip_archive, file_name.c_str(), &uncompressed_size, 0);
 
 		if (!Core::FileSystem::Get()->WriteFile(file_name_on_disk, p, (uint32)uncompressed_size))
 		{
-			std::cerr << "Could not write the file " << file_name_on_disk.c_str() << std::endl;
+			CAM_LOG_ERROR("Could not write the file {}", file_name_on_disk);
 			return false;
 		}
 
@@ -353,11 +360,24 @@ bool Client::ExtractUpdate(const std::string &zipPath)
 
 	if (!mz_zip_reader_end(&zip_archive))
 	{
-		std::cerr << "Could not close the zip reader" << std::endl;
+		CAM_LOG_ERROR("Could not close the zip reader");
 		return false;
 	}
 
-	std::cout << "Archive " << zipPath.c_str() << " extracted." << std::endl;
+	CAM_LOG_INFO("Archive {} extracted successfully.", zipPath);
+	return true;
+}
+
+bool Client::LoadLocalVersion()
+{
+	// First load the local client version
+	uint32 local_version = Core::utils::GetLocalVersion(m_Config.UpdateTargetPath);
+	if (!local_version)
+	{
+		return false;
+	}
+
+	m_LocalVersion = local_version;
 	return true;
 }
 
@@ -379,7 +399,7 @@ void Client::UpdateProgress(int64 now_ms, Core::addr_t addr)
 {
 	if (m_IsFinished)
 	{
-		std::cout << "Finished updating progress." << std::endl;
+		CAM_LOG_INFO("Finished updating progress.");
 		return;
 	}
 
@@ -391,7 +411,7 @@ void Client::UpdateProgress(int64 now_ms, Core::addr_t addr)
 			m_ClientToken = m_Crypto->GenToken();
 
 			// Send update begin request to server
-			std::cout << "Sending update begin request..." << std::endl;
+			CAM_LOG_DEBUG("Sending update begin request...");
 			ClientUpdateBeginMessage begin_update = {};
 			begin_update.Header.Type = MessageType::CLIENT_UPDATE_BEGIN;
 			begin_update.Header.Version = m_ClientVersion;
@@ -406,17 +426,17 @@ void Client::UpdateProgress(int64 now_ms, Core::addr_t addr)
 	}
 
 	// We are updating
-	std::cout << "Update index: " << m_UpdateIdx << ", pieces size: " << m_UpdatePieces.Size << std::endl;
+	CAM_LOG_DEBUG("Loading update: {0} / {1}", m_UpdateIdx, m_UpdatePieces.Size);
 	if (m_UpdateIdx >= m_UpdatePieces.Size)
 	{
 		if (m_Crypto->TestSignature(m_UpdateSignature.Data, SIG_BYTES, m_UpdateData.Ptr, m_UpdateData.Size, m_Config.PublicKey.Data, m_Config.PublicKey.Size))
 		{
-			std::cout << "Writing file " << (m_Config.UpdateBinaryPath + "/update.zip") << std::endl;
+			CAM_LOG_DEBUG("Writing file {}", (m_Config.UpdateBinaryPath + "/update.zip"));
 			if (Core::FileSystem::Get()->WriteFile(m_Config.UpdateBinaryPath + "/update.zip", m_UpdateData.Ptr, m_UpdateData.Size))
 			{
 				m_IsFinished = true;
 				m_Status.Code = ClientStatusCode::UP_TO_DATE;
-				std::cout << "File " << (m_Config.UpdateBinaryPath + "/update.zip") << " written successfully." << std::endl;
+				CAM_LOG_DEBUG("File {} written successfully.", (m_Config.UpdateBinaryPath + "/update.zip"));
 				return;
 			}
 			else
@@ -440,7 +460,7 @@ void Client::UpdateProgress(int64 now_ms, Core::addr_t addr)
 	{
 		m_LastPieceMS = now_ms;
 
-		std::cout << "Sending update piece request..." << std::endl;
+		CAM_LOG_DEBUG("Sending update piece request...");
 		ClientUpdatePieceMessage msg = {};
 		msg.Header.Version = m_LocalVersion;
 		msg.Header.Type = MessageType::CLIENT_UPDATE_PIECE;
@@ -483,7 +503,7 @@ void Client::UpdateProgress(int64 now_ms, Core::addr_t addr)
 		if (!found_missing)
 		{
 			m_UpdateIdx = m_UpdatePieces.Size;
-			std::cout << "Requested all update pieces successfully." << std::endl;
+			CAM_LOG_INFO("Requested all update pieces successfully.");
 		}
 	}
 }

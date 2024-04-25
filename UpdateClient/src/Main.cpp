@@ -12,6 +12,8 @@
 /// <returns></returns>
 int main(int argc, char *argv[])
 {
+	Core::Init();
+
 	// TODO: Generate public key
 
 	// TODO: Remove update.zip, if it exists
@@ -33,6 +35,7 @@ int main(int argc, char *argv[])
 	// Run the client
 	c.Run();
 
+	Core::Shutdown();
 	return 0;
 }
 

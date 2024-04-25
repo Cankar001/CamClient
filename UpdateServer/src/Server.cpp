@@ -3,9 +3,9 @@
 #include <iostream>
 #include <filesystem>
 
-#include <miniz/miniz.h>
-
 #include "Utils/Utils.h"
+#include "Utils/ZipArchive.h"
+#include "Core/Log.h"
 
 Server::Server(const ServerConfig &config)
 	: m_Config(config)
@@ -25,17 +25,17 @@ Server::Server(const ServerConfig &config)
 	std::string cwd = "";
 	Core::FileSystem::Get()->GetCurrentWorkingDirectory(&cwd);
 
-	std::cout << "===================== CONFIG ===================================" << std::endl;
-	std::cout << "Private key path      : " << config.PrivateKeyPath << std::endl;
-	std::cout << "Public key path       : " << config.PublicKeyPath << std::endl;
-	std::cout << "IP                    : " << config.ServerIP << std::endl;
-	std::cout << "Port                  : " << config.ServerPort << std::endl;
-	std::cout << "Signature path        : " << config.SignaturePath << std::endl;
-	std::cout << "Target binary path    : " << config.TargetBinaryPath << std::endl;
-	std::cout << "Target source path    : " << config.TargetSourcePath << std::endl;
-	std::cout << "Current Server version: " << m_LocalVersion << std::endl;
-	std::cout << "Current CWD           : " << cwd << std::endl;
-	std::cout << "================================================================" << std::endl;
+	CAM_LOG_INFO("===================== CONFIG ===================================");
+	CAM_LOG_INFO("Private key path      : {}", config.PrivateKeyPath);
+	CAM_LOG_INFO("Public key path       : {}", config.PublicKeyPath);
+	CAM_LOG_INFO("IP                    : {}", config.ServerIP);
+	CAM_LOG_INFO("Port                  : {}", config.ServerPort);
+	CAM_LOG_INFO("Signature path        : {}", config.SignaturePath);
+	CAM_LOG_INFO("Target binary path    : {}", config.TargetBinaryPath);
+	CAM_LOG_INFO("Target source path    : {}", config.TargetSourcePath);
+	CAM_LOG_INFO("Current Server version: {}", m_LocalVersion);
+	CAM_LOG_INFO("Current CWD           : {}", cwd);
+	CAM_LOG_INFO("================================================================");
 }
 
 Server::~Server()
@@ -57,7 +57,7 @@ Server::~Server()
 
 void Server::Run()
 {
-	std::cout << "Waiting for clients to connect..." << std::endl;
+	CAM_LOG_INFO("Waiting for clients to connect...");
 
 	for (;;)
 	{
@@ -65,7 +65,7 @@ void Server::Run()
 
 		if (!m_Socket->Bind(m_Config.ServerPort))
 		{
-			std::cerr << "Could not bind socket" << std::endl;
+			CAM_LOG_ERROR("Could not bind socket");
 			break;
 		}
 
@@ -77,13 +77,13 @@ void Server::Run()
 			}
 		}
 
-		std::cerr << "error: network interface failure." << std::endl;
+		CAM_LOG_ERROR("network interface failure.");
 		m_Socket->Close();
 
-		Core::SleepMS(5000);
+		Core::SleepMS(10);
 	}
 
-	std::cerr << "error: socket creation failed." << std::endl;
+	CAM_LOG_ERROR("socket creation failed.");
 }
 
 bool Server::LoadUpdateFile(bool forceDeleteSignature, bool skipDebugFiles)
@@ -94,27 +94,28 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature, bool skipDebugFiles)
 
 	if (!Core::FileSystem::Get()->DirectoryExists(update_path))
 	{
-		std::cerr << "Binary path from source does not exist! Please re-check your binary path or build the source first." << std::endl;
+		CAM_LOG_ERROR("Binary path from source does not exist! Please re-check your binary path or build the source first.");
 		return false;
 	}
 
-	std::cout << "Generating new update package at location " << update_file << "..." << std::endl;
+	CAM_LOG_INFO("Generating new update package at location {} ...", update_file);
 
 	// then delete an existing update file
 	if (Core::FileSystem::Get()->FileExists(update_file))
 	{
 		if (!Core::FileSystem::Get()->RemoveFile(update_file))
 		{
-			std::cerr << "Could not delete the file " << update_file << std::endl;
+			CAM_LOG_ERROR("Could not delete the file {}", update_file);
 			return false;
 		}
 		else
 		{
-			std::cout << "Deleted existing packaged update from disk." << std::endl;
+			CAM_LOG_INFO("Deleted existing packaged update from disk.");
 		}
 	}
 
 	// load the contents of the directory and store them into the zip file
+	std::vector<Core::ZipFile> files;
 	for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(update_path))
 	{
 		const std::filesystem::path p = entry.path();
@@ -124,7 +125,7 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature, bool skipDebugFiles)
 		// skip the archive itself
 		if (current_file_name.find("update") != std::string::npos)
 		{
-			std::cout << "Skipping update file" << std::endl;
+			CAM_LOG_INFO("Skipping update file.");
 			continue;
 		}
 
@@ -132,40 +133,54 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature, bool skipDebugFiles)
 		{
 			if (current_file_name.find(".pdb") != std::string::npos)
 			{
-				std::cout << "Skipping debug file " << zip_name << std::endl;
+				CAM_LOG_INFO("Skipping debug file {}", zip_name);
 				continue;
 			}
 		}
 	
-		std::cout << "Adding " << zip_name.c_str() << "..." << std::endl;
-	
+		CAM_LOG_INFO("Adding {}...", zip_name);
+
 		uint32 file_size = 0;
 		Byte *data = Core::FileSystem::Get()->ReadFile(current_file_name, &file_size);
 		if (!data)
 		{
-			std::cerr << "Could not read file " << current_file_name << "!" << std::endl;
+			CAM_LOG_ERROR("Could not read file {}!", current_file_name);
 			return false;
 		}
 	
-		mz_bool status = mz_zip_add_mem_to_archive_file_in_place(update_file.c_str(), zip_name.c_str(), data, file_size, nullptr, 0, MZ_BEST_COMPRESSION);
-		if (!status)
-		{
-			std::cerr << "Could not put " << zip_name.c_str() << " into " << update_file.c_str() << std::endl;
-			return false;
-		}
-	
-		delete[] data;
-		data = nullptr;
+		Core::ZipFile file;
+		file.Path = current_file_name;
+		file.Buffer = data;
+		file.BufferSize = file_size;
+		files.push_back(file);
 	}
 
-	std::cout << "Added all files." << std::endl;
+	CAM_LOG_INFO("Added all files.");
+
+	// Now trying to store the whole contents into the zip file
+	CAM_LOG_INFO("Writing zip file to memory...");
+	Core::ZipArchive archive;
+	if (!archive.Store(files, update_file))
+	{
+		CAM_LOG_ERROR("Could not save the zip file!");
+		return false;
+	}
+
+	CAM_LOG_INFO("Zip file written successfully to {}", update_file);
+
+	// Cleanup the memory.
+	for (auto &file : files)
+	{
+		delete[] file.Buffer;
+		file.Buffer = nullptr;
+	}
 
 	// Load the whole ZIP file into memory
 	m_UpdateFile.Data = Core::FileSystem::Get()->ReadFile(update_file, &m_UpdateFile.Size);
 	
 	if (!m_UpdateFile.Data)
 	{
-		std::cerr << "Could not read back in the update file!" << std::endl;
+		CAM_LOG_ERROR("Could not read back in the update file!");
 		return false;
 	}
 
@@ -175,7 +190,7 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature, bool skipDebugFiles)
 		{
 			if (!Core::FileSystem::Get()->RemoveFile(m_Config.PrivateKeyPath))
 			{
-				std::cerr << "Could not remove private key!" << std::endl;
+				CAM_LOG_ERROR("Could not remove private key!");
 				return false;
 			}
 		}
@@ -184,7 +199,7 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature, bool skipDebugFiles)
 		{
 			if (!Core::FileSystem::Get()->RemoveFile(m_Config.PublicKeyPath))
 			{
-				std::cerr << "Could not remove public key!" << std::endl;
+				CAM_LOG_ERROR("Could not remove public key!");
 				return false;
 			}
 		}
@@ -193,7 +208,7 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature, bool skipDebugFiles)
 		{
 			if (!Core::FileSystem::Get()->RemoveFile(m_Config.SignaturePath))
 			{
-				std::cerr << "Could not remove signature!" << std::endl;
+				CAM_LOG_ERROR("Could not remove signature!");
 				return false;
 			}
 		}
@@ -209,7 +224,7 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature, bool skipDebugFiles)
 
 		if (!public_key.Data)
 		{
-			std::cerr << "Could not read the public key!" << std::endl;
+			CAM_LOG_ERROR("Could not read the public key!");
 			return false;
 		}
 		
@@ -220,7 +235,7 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature, bool skipDebugFiles)
 
 		if (!private_key.Data)
 		{
-			std::cerr << "Could not read the private key!" << std::endl;
+			CAM_LOG_ERROR("Could not read the private key!");
 			return false;
 		}
 	}
@@ -228,7 +243,7 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature, bool skipDebugFiles)
 	{
 		if (!m_Crypto->GenKeys(&public_key, &private_key))
 		{
-			std::cerr << "Could not generate public/private key pair!" << std::endl;
+			CAM_LOG_ERROR("Could not generate public/private key pair!");
 			return false;
 		}
 	}
@@ -242,7 +257,7 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature, bool skipDebugFiles)
 		private_key.Data, 
 		private_key.Size))
 	{
-		std::cerr << "Could not sign the update!" << std::endl;
+		CAM_LOG_ERROR("Could not sign the update!");
 		return false;
 	}
 
@@ -250,7 +265,7 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature, bool skipDebugFiles)
 	{
 		if (!Core::FileSystem::Get()->RemoveFile(m_Config.SignaturePath))
 		{
-			std::cerr << "Could not delete the old signature file!" << std::endl;
+			CAM_LOG_ERROR("Could not delete the old signature file!");
 			return false;
 		}
 	}
@@ -260,26 +275,26 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature, bool skipDebugFiles)
 	{
 		if (!Core::FileSystem::Get()->WriteFile(m_Config.PrivateKeyPath, private_key.Data, private_key.Size))
 		{
-			std::cerr << "Could not write private key file!" << std::endl;
+			CAM_LOG_ERROR("Could not write private key file!");
 			return false;
 		}
 	}
 
 	if (!Core::FileSystem::Get()->WriteFile(m_Config.PublicKeyPath, public_key.Data, public_key.Size))
 	{
-		std::cerr << "Could not write public key file!" << std::endl;
+		CAM_LOG_ERROR("Could not write public key file!");
 		return false;
 	}
 
 	if (!Core::FileSystem::Get()->WriteFile(m_Config.SignaturePath, m_UpdateSignature.Data, SIG_BYTES))
 	{
-		std::cerr << "Could not write the new signature!" << std::endl;
+		CAM_LOG_ERROR("Could not write the new signature!");
 		return false;
 	}
 
 	m_PublicKey.Size = public_key.Size;
 	memcpy(m_PublicKey.Data, public_key.Data, sizeof(public_key.Data));
-	std::cout << "Loaded update with size " << m_UpdateFile.Size << std::endl;
+	CAM_LOG_INFO("Loaded update with size {}", m_UpdateFile.Size);
 
 	return true;
 }
@@ -289,7 +304,7 @@ void Server::StartFileWatcher()
 	Server *instance = this;
 	Core::FileSystemWatcher::Start(m_Config.TargetBinaryPath, [instance](const Core::FileSystemWatcherContext &context) mutable
 	{
-		std::cout << "Something happened with file " << context.FilePath.c_str() << std::endl;
+		CAM_LOG_INFO("Something happened with file {}", context.FilePath);
 		switch (context.Action)
 		{
 			case Core::FileSystemWatcherAction::Added:
@@ -329,26 +344,26 @@ bool Server::Step()
 		}
 
 		ClientUpdateBeginMessage *msg = (ClientUpdateBeginMessage *)BUF;
-		std::cout << "Received Update begin request with client token: " << msg->ClientToken << std::endl;
+		CAM_LOG_DEBUG("Received Update begin request with client token: {}", msg->ClientToken);
 
 		int64 now_ms = Core::QueryMS();
-		auto client = m_Clients->Insert(addr, now_ms);
+		Core::Clients::Node *client = m_Clients->Insert(addr, now_ms);
 
 		if (!client)
 		{
-			std::cerr << "Client could not be inserted!" << std::endl;
+			CAM_LOG_ERROR("Client could not be inserted!");
 			return true;
 		}
 
 		if (!client->IsBandwidthAvailable(now_ms))
 		{
-			std::cerr << "Client has no bandwidth available!" << std::endl;
+			CAM_LOG_ERROR("Client has no bandwidth available!");
 			return true;
 		}
 
 		if (msg->ServerToken != client->ServerToken)
 		{
-			std::cerr << "Server tokens did not match! Sending Server update token message..." << std::endl;
+			CAM_LOG_WARN("Server tokens did not match! Sending Server update token message...");
 			ServerUpdateTokenMessage res = {};
 			res.Header.Type = MessageType::SERVER_UPDATE_TOKEN;
 			res.Header.Version = m_LocalVersion;
@@ -361,7 +376,7 @@ bool Server::Step()
 			return true;
 		}
 
-		std::cout << "Sending update begin response..." << std::endl;
+		CAM_LOG_DEBUG("Sending update begin response...");
 		ServerUpdateBeginMessage res;
 		memset(&res, 0, sizeof(res));
 
@@ -385,35 +400,34 @@ bool Server::Step()
 		int64 now_ms = Core::QueryMS();
 
 		ClientUpdatePieceMessage *msg = (ClientUpdatePieceMessage *)BUF;
-		std::cout << "Received update piece request for update position: " << msg->PiecePos << std::endl;
 
 		if (msg->PiecePos >= m_UpdateFile.Size)
 		{
-			std::cerr << "The request position was larger than the file!" << std::endl;
+			CAM_LOG_ERROR("The request position was larger than the file!");
 			return true;
 		}
 
-		auto client = m_Clients->Insert(addr, now_ms);
+		Core::Clients::Node *client = m_Clients->Insert(addr, now_ms);
 
 		if (!client)
 		{
-			std::cerr << "Could not find the client for addr " << addr.Host << ", port " << addr.Port << std::endl;
+			CAM_LOG_ERROR("Could not find the client for addr {0}, port {1}", addr.Host, addr.Port);
 			return true;
 		}
 
 		if (!client->IsBandwidthAvailable(now_ms))
 		{
-			std::cerr << "Client has no bandwidth available!" << std::endl;
+			CAM_LOG_ERROR("Client has no bandwidth available!");
 			return true;
 		}
 
 		if (msg->ServerToken != client->ServerToken)
 		{
-			std::cerr << "Server tokens did not match!" << std::endl;
+			CAM_LOG_ERROR("Server tokens did not match!");
 			return true;
 		}
 
-		std::cout << "Sending update piece response..." << std::endl;
+		CAM_LOG_DEBUG("Sending update: {0} / {1}", msg->PiecePos, m_UpdateFile.Size);
 		ServerUpdatePieceMessage res = {};
 		res.Header.Version = m_LocalVersion;
 		res.Header.Type = MessageType::SERVER_UPDATE_PIECE;
@@ -422,13 +436,21 @@ bool Server::Step()
 		res.PiecePos = msg->PiecePos;
 		res.PieceSize = (uint16)Core::utils::Min<uint32>(m_UpdateFile.Size - msg->PiecePos, PIECE_BYTES);
 
-		char send_buf[sizeof(res) + PIECE_BYTES];
+		char* send_buf = (char*)malloc(sizeof(res) + res.PieceSize);
+		if (!send_buf)
+		{
+			CAM_LOG_ERROR("Failed to allocate enough space for the update package!");
+			return true;
+		}
+
 		memcpy(send_buf, &res, sizeof(res));
 		memcpy(send_buf + sizeof(res), m_UpdateFile.Data + msg->PiecePos, res.PieceSize);
 
 		uint32 send_bytes = sizeof(res) + res.PieceSize;
 		m_Socket->Send(send_buf, send_bytes, addr);
 
+		free(send_buf);
+		send_buf = nullptr;
 		client->Bandwidth += send_bytes;
 	}
 	else if (header->Type == MessageType::CLIENT_REQUEST_VERSION)
@@ -440,15 +462,16 @@ bool Server::Step()
 
 		ClientWantsVersionMessage *msg = (ClientWantsVersionMessage *)BUF;
 		uint32 client_version = msg->LocalVersion;
-		std::cout << "Received server version request for version: " << msg->LocalVersion << std::endl;
 
-		std::cout << "Sending server version response with version: " << m_LocalVersion << std::endl;
+		CAM_LOG_DEBUG("Received server version request for version: {}", msg->LocalVersion);
+		CAM_LOG_DEBUG("Sending server version response with version: {}", m_LocalVersion);
+
 		ServerVersionInfoMessage res = {};
 		res.Header.Type = MessageType::SERVER_RECEIVE_VERSION;
 		res.Header.Version = m_LocalVersion;
 		res.Version = m_LocalVersion;
 		res.PublicKey.Size = m_PublicKey.Size;
-		memcpy(res.PublicKey.Data, m_PublicKey.Data, sizeof(m_PublicKey.Data));
+		memcpy(res.PublicKey.Data, m_PublicKey.Data, m_PublicKey.Size);
 		m_Socket->Send(&res, sizeof(res), addr);
 	}
 

@@ -4,6 +4,8 @@
 
 int main(int argc, char *argv[])
 {
+	Core::Init();
+
 	// Set the current working directory
 	Core::FileSystem::Get()->SetCurrentWorkingDirectory("../../../");
 
@@ -22,6 +24,7 @@ int main(int argc, char *argv[])
 		std::cerr << "Could not load the update!" << std::endl;
 
 		delete s;
+		Core::Shutdown();
 		return -1;
 	}
 
@@ -30,6 +33,7 @@ int main(int argc, char *argv[])
 	s->Run();
 
 	delete s;
+	Core::Shutdown();
 	return 0;
 }
 

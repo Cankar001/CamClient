@@ -25,7 +25,8 @@ project "UpdateClient"
     {
 		"src",
 		"%{IncludeDir.cam_core}",
-		"%{IncludeDir.miniz}"
+		"%{IncludeDir.spdlog}",
+		"%{IncludeDir.miniz}" -- TODO: TEMP
     }
 	
 	postbuildcommands
@@ -35,7 +36,8 @@ project "UpdateClient"
 	links
 	{
 		"Cam-Core",
-		"Miniz"
+		"spdlog",
+		"Miniz" -- TODO: TEMP
 	}
 
     filter "system:windows"

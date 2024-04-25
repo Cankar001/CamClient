@@ -63,3 +63,8 @@ typedef int64 intptr;
 #define CAM_API CAM_DLL_IMPORT
 #endif
 
+namespace Core
+{
+	void Init();
+	void Shutdown();
+}

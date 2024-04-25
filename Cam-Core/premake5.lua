@@ -16,7 +16,15 @@ project "Cam-Core"
     includedirs
     {
 		"src",
+		"%{IncludeDir.miniz}",
+		"%{IncludeDir.spdlog}",
     }
+
+	links
+	{
+		"Miniz",
+		"spdlog"
+	}
 
     defines
 	{

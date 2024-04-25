@@ -24,12 +24,14 @@ project "CamClient"
     {
 		"src",
 		"%{IncludeDir.cam_core}",
+		"%{IncludeDir.spdlog}",
 		"%{IncludeDir.opencv}",
     }
 
     links
     {
-        "Cam-Core"
+        "Cam-Core",
+		"spdlog"
     }
 
 	filter { "system:windows", "configurations:Debug" }
