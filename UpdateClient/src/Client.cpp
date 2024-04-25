@@ -430,17 +430,18 @@ void Client::UpdateProgress(int64 now_ms, Core::addr_t addr)
 	}
 
 	// We are updating
-	CAM_LOG_DEBUG("Loading update: {0} / {1}", m_UpdateIdx, m_UpdatePieces.Size);
+	CAM_LOG_DEBUG("Loading update: {0} / {1}", m_UpdateIdx, m_UpdateData.Size);
 	if (m_UpdateIdx >= m_UpdatePieces.Size)
 	{
 		if (m_Crypto->TestSignature(m_UpdateSignature.Data, SIG_BYTES, m_UpdateData.Ptr, m_UpdateData.Size, m_Config.PublicKey.Data, m_Config.PublicKey.Size))
 		{
-			CAM_LOG_DEBUG("Writing file {}", (m_Config.UpdateBinaryPath + "/update.zip"));
-			if (Core::FileSystem::Get()->WriteFile(m_Config.UpdateBinaryPath + "/update.zip", m_UpdateData.Ptr, m_UpdateData.Size))
+			std::string update_file = m_Config.UpdateBinaryPath + "/update.zip";
+			CAM_LOG_DEBUG("Writing file {}", update_file);
+			if (Core::FileSystem::Get()->WriteFile(update_file, m_UpdateData.Ptr, m_UpdateData.Size))
 			{
 				m_IsFinished = true;
 				m_Status.Code = ClientStatusCode::UP_TO_DATE;
-				CAM_LOG_DEBUG("File {} written successfully.", (m_Config.UpdateBinaryPath + "/update.zip"));
+				CAM_LOG_INFO("File {} written successfully.", update_file);
 				return;
 			}
 			else
