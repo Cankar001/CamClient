@@ -85,7 +85,7 @@ public:
 private:
 
 	void MessageLoop();
-	bool ExtractUpdate(const std::string &zipPath);
+	//bool ExtractUpdate(const std::string &zipPath);
 	bool LoadLocalVersion();
 
 private:

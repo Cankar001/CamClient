@@ -2,12 +2,11 @@
 
 #include <iostream>
 #include <assert.h>
-#include <miniz/miniz.h>
 
 #include "Utils/Utils.h"
 #include "Core/Log.h"
 
-static uint32 MAX_RECV_ATTEMPTS = 500;
+static uint32 MAX_RECV_ATTEMPTS = 250;
 
 Client::Client(const ClientConfig &config)
 	: m_Config(config)
@@ -82,6 +81,8 @@ void Client::Run()
 
 		if (m_Status.Code == ClientStatusCode::UP_TO_DATE)
 		{
+			CAM_DEBUG_BREAK;
+#if 0
 			if (ExtractUpdate(m_Config.UpdateBinaryPath + "/update.zip"))
 			{
 				// TODO: start CamClient application
@@ -96,6 +97,7 @@ void Client::Run()
 			{
 				CAM_LOG_ERROR("Could not extract the archive!");
 			}
+#endif
 		}
 		else if (m_Status.Code == ClientStatusCode::BAD_SIG)
 		{
@@ -310,6 +312,7 @@ void Client::MessageLoop()
 	}
 }
 
+#if 0
 bool Client::ExtractUpdate(const std::string &zipPath)
 {
 	mz_zip_archive zip_archive;
@@ -367,6 +370,7 @@ bool Client::ExtractUpdate(const std::string &zipPath)
 	CAM_LOG_INFO("Archive {} extracted successfully.", zipPath);
 	return true;
 }
+#endif
 
 bool Client::LoadLocalVersion()
 {
