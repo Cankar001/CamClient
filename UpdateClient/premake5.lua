@@ -40,9 +40,11 @@ project "UpdateClient"
 
     filter "system:windows"
         systemversion "latest"
+		defines "CAM_PLATFORM_WINDOWS"
 
     filter "system:linux"
         systemversion "latest"
+		defines "CAM_PLATFORM_LINUX"
 
         links
         {

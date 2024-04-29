@@ -137,6 +137,11 @@ namespace Core
 	{
 		return false;
 	}
+
+	bool FileSystem::StartProgram(const std::string &executable)
+	{
+		return false;
+	}
 }
 
 #endif // CAM_PLATFORM_LINUX

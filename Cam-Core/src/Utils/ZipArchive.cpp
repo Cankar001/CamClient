@@ -55,6 +55,7 @@ namespace Core
 			ZipFile file;
 			file.Buffer = p;
 			file.BufferSize = uncomp_size;
+			file.Name = file_stat.m_filename;
 			file.Path = file_stat.m_filename;
 			result.push_back(file);
 		}

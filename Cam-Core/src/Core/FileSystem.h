@@ -29,6 +29,8 @@ namespace Core
 		
 		bool RemoveFile(const std::string &filePath) const;
 		bool RemoveDirectoy(const std::string &filePath) const;
+
+		bool StartProgram(const std::string &executable);
 	};
 
 	struct FileSystemBuffer

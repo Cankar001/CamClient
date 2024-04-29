@@ -82,22 +82,66 @@ void Client::Run()
 
 		if (m_Status.Code == ClientStatusCode::UP_TO_DATE)
 		{
+			std::string zipFile = m_Config.UpdateBinaryPath + "/update.zip";
+			
+			// Construct the path to the target executable
+#if CAM_PLATFORM_WINDOWS
+			std::string camClientFile = m_Config.UpdateBinaryPath + "/CamClient.exe";
+#else
+			std::string camClientFile = m_Config.UpdateBinaryPath + "/CamClient";
+#endif
+
+
 			CAM_LOG_DEBUG("Extracting zip archive...");
 			Core::ZipArchive archive;
-			std::vector<Core::ZipFile> files = archive.Load(m_Config.UpdateBinaryPath + "/update.zip");
+			std::vector<Core::ZipFile> files = archive.Load(zipFile);
 			CAM_LOG_INFO("zip archive extracted successfully.");
+
+			// Run through the archive and store the files on the disk.
+			CAM_LOG_DEBUG("Writing all files from archive to disk...");
 			for (const auto &file : files)
 			{
-				CAM_LOG_INFO("{}", file.Path);
+				std::string current_file = m_Config.UpdateBinaryPath + "/" + file.Name;
+				CAM_LOG_DEBUG("    Writing file {} to disk...", current_file);
+
+				bool writeSuccess = Core::FileSystem::Get()->WriteFile(current_file, file.Buffer, file.BufferSize);
+				if (!writeSuccess)
+				{
+					CAM_LOG_ERROR("Failed to store file {} on disk!", current_file);
+				}
+			}
+			CAM_LOG_INFO("All files written successfully.");
+
+			// Remove zip file
+			CAM_LOG_DEBUG("Trying to remove the update file...");
+			if (!Core::FileSystem::Get()->RemoveFile(zipFile))
+			{
+				CAM_LOG_ERROR("Failed to remove file {}", zipFile);
+			}
+			CAM_LOG_INFO("Update file successfully removed.");
+
+			// Clean up the RAM memory
+			for (auto &file : files)
+			{
+				delete[] file.Buffer;
+				file.Buffer = nullptr;
 			}
 
-			// Update local version
-			uint32 new_version = Core::utils::GetLocalVersion(m_Config.UpdateTargetPath);
-
-			m_Status.Code = ClientStatusCode::NONE;
+			// TODO: Update local version (maybe just receive it back from the server).
 
 			// TODO: start CamClient application
-			CAM_LOG_INFO("Starting CamClient v{}...", new_version);
+			CAM_LOG_DEBUG("Starting CamClient...");
+			if (!Core::FileSystem::Get()->StartProgram(camClientFile))
+			{
+				CAM_LOG_ERROR("Failed to start the Cam Client application!");
+			}
+			else
+			{
+				CAM_LOG_INFO("CamClient started successfully.");
+			}
+			
+			// Set the new state, we are finished with everything and the client can shutdown.
+			m_Status.Code = ClientStatusCode::NONE;
 		}
 		else if (m_Status.Code == ClientStatusCode::BAD_SIG)
 		{

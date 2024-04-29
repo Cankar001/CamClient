@@ -10,6 +10,8 @@
 #include <fileapi.h>
 #include <Shlobj.h>
 
+#include "Core/Log.h"
+
 namespace Core
 {
 	namespace utils
@@ -234,6 +236,36 @@ namespace Core
 	bool FileSystem::RemoveDirectoy(const std::string &filePath) const
 	{
 		return RemoveDirectoryA(filePath.c_str());
+	}
+
+	bool FileSystem::StartProgram(const std::string &executable)
+	{
+		STARTUPINFOA startInfo;
+		PROCESS_INFORMATION process;
+
+		ZeroMemory(&startInfo, sizeof(startInfo));
+		startInfo.cb = sizeof(STARTUPINFO);
+		ZeroMemory(&process, sizeof(process));
+
+		if (!CreateProcessA(executable.c_str(), NULL, NULL, NULL, NULL, NULL, NULL, NULL, &startInfo, &process))
+		{
+			CAM_LOG_ERROR("Failed to start the process {}", executable);
+			return false;
+		}
+
+		if (!CloseHandle(process.hProcess))
+		{
+			CAM_LOG_ERROR("Failed to close the handle for the process from {}", executable);
+			return false;
+		}
+
+		if (!CloseHandle(process.hThread))
+		{
+			CAM_LOG_ERROR("Failed to close the handle for the thread from {}", executable);
+			return false;
+		}
+
+		return true;
 	}
 }
 
