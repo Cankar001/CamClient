@@ -75,9 +75,9 @@ namespace Core
 			return false;
 		}
 
-		for (const auto &zip_file : inZipfiles)
+		for (const Core::ZipFile &zip_file : inZipfiles)
 		{
-			if (!mz_zip_writer_add_mem(&zip_archive, zip_file.Path.c_str(), zip_file.Buffer, zip_file.BufferSize, MZ_BEST_COMPRESSION))
+			if (!mz_zip_writer_add_mem(&zip_archive, zip_file.Name.c_str(), zip_file.Buffer, zip_file.BufferSize, MZ_BEST_COMPRESSION))
 			{
 				std::cerr << "Failed to add file " << zip_file.Path << " to archive " << inFilepath << std::endl;
 

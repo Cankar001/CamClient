@@ -153,8 +153,9 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature, bool skipDebugFiles)
 			CAM_LOG_ERROR("Could not read file {}!", current_file_name);
 			return false;
 		}
-	
+		
 		Core::ZipFile file;
+		file.Name = std::filesystem::path(current_file_name).filename().string();
 		file.Path = current_file_name;
 		file.Buffer = data;
 		file.BufferSize = file_size;
@@ -301,7 +302,7 @@ bool Server::LoadUpdateFile(bool forceDeleteSignature, bool skipDebugFiles)
 	m_PublicKey.Size = public_key.Size;
 	memcpy(m_PublicKey.Data, public_key.Data, sizeof(public_key.Data));
 	CAM_LOG_INFO("Loaded update with size {}", m_UpdateFile.Size);
-
+	
 	return true;
 }
 

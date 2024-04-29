@@ -7,6 +7,7 @@ namespace Core
 {
 	struct ZipFile
 	{
+		std::string Name;
 		std::string Path;
 		void *Buffer;
 		size_t BufferSize;
