@@ -247,7 +247,7 @@ namespace Core
 		startInfo.cb = sizeof(STARTUPINFO);
 		ZeroMemory(&process, sizeof(process));
 
-		if (!CreateProcessA(executable.c_str(), NULL, NULL, NULL, NULL, NULL, NULL, NULL, &startInfo, &process))
+		if (!CreateProcessA(executable.c_str(), NULL, NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, NULL, &startInfo, &process))
 		{
 			CAM_LOG_ERROR("Failed to start the process {}", executable);
 			return false;
