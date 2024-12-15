@@ -4,7 +4,8 @@
 
 struct DisplayClientConfig
 {
-
+	std::string ServerIP;
+	uint16 Port;
 };
 
 class DisplayClient
